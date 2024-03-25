@@ -1,0 +1,108 @@
+---
+title: "Stochasticity and Annual Plants"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    # keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(6)
+library(ggplot2)
+```
+
+
+## Intro to Simulating Data
+
+Thus far in this week's lab, we have been exploring deterministic models of population growth. We might also want to explore a stochastic population model, that is, one that incorporates randomness. We might first ask ourselves, _which parameters are subject to vary randomly?_ We might also ask ourselves, _what form does this random variation take?_ To better understand the considerations involved in building stochastic population models, and to explore the role of stochasticity in a simple population model, we will examine the following model:
+
+Let's consider how stochasticity in the carrying capacity might influence trajectory of population growth. Perhaps the carrying capacity changes year to year. First, consider what the carrying capacity in the logistic growth equation represents. Why might this parameter be subject to stochasticity?
+
+One way that we can conceptualize year-to-year fluctuations in the carrying capacity is through pulls from a probability distribution. Probability distributions describes the probability of observing a particular value across the range of values that a parameter can take. Probability theorists have formulated many theoretical probability distributions, but one that you are likely familiar with is the normal distribution. A particular probability density function describes the normal distribution as a function of its mean and its standard deviation. The standard normal distribution has a mean of zero and a standard deviation of one and looks like this:
+
+```{r normal distribution}
+ggplot() + xlim(-5, 5) + geom_function(fun = dnorm) + theme_classic() + 
+  ylab("Probability") + xlab("Value")
+```
+
+ Now, let's say the carrying capacity of a population tends to be about 300 individuals. On good years, the carrying capacity might increase, and on bad years it might decrease. Let's say that, on average, the realized carrying capacity deviates by 10 individuals. The probability distribution would then look like the following:
+ 
+```{r ex carrying capacity distribution}
+ggplot() + xlim(250, 350) + geom_function(fun = dnorm, args = list(mean = 300, sd = 10)) + theme_classic() + 
+  ylab("Probability") + xlab("Carrying Capacity")
+```
+
+Now that we have an idea of how the carrying capacity fluctuates year to year, we can treat the carrying capacity on any given year as a random pull from this distribution. Pseudo-random number generators built into R allow us to pull a value from this distribution. Let's practice. 
+
+### <span style="color: #871FBF;">Exercise 12</span>
+Generate five random numbers from the distribution we just described using rnorm() and make a histogram of these values. 
+<br>
+
+### <span style="color: #871FBF;">Exercise 13</span>
+Now repeat with 50, 500, and 5000 random numbers. What shape does our histogram approach?
+
+$$\\[.5in]$$
+
+Now that we have some intuition about how the 'rnorm()' function works, let's use it to randomly pull some values for the carrying capacity. 
+
+```{r example stochastic logistic}
+r <- .5
+mu_K <- 300
+sig_K <- 10
+period <- 100
+Nt <- 1 # current population size starts as initial population size
+t <- c() # empty vector to store time
+N <- c(Nt) # empty vector to store population sizes
+for(i in 1:period){ # iterate this chunk starting at i = 0 and ending at i = period
+  dN <- r*Nt*(1 - Nt/rnorm(1, mu_K, sig_K)) # calculate the growth rate at i
+  Nt <- ifelse(Nt + dN > 0, Nt + dN, 0) # calculate the new pop size at i
+  N <- c(N, Nt) # store the pop size at time i
+}
+plot(0:100, N)
+```
+
+That looks pretty stochastic! What if we increased this stochasticity? Here's a function to explore that:
+
+```{r stochastic logistic model}
+stoch_log_fun <- function(r, n0, tmax, mu, sig){
+  Nt <- n0
+  N <- c(Nt)
+  for(i in 1:tmax){
+  dN <- r*Nt*(1 - Nt/rnorm(1, mu, sig))
+  Nt <- ifelse(Nt + dN > 0, Nt + dN, 0)
+  N <- c(N, Nt)
+  }
+  dat <- cbind.data.frame(t = 0:tmax, N)
+  ggplot(data = dat, aes(x = t, y = N)) + geom_point() + theme_classic(base_size = 15) +
+    xlab("Time") + ylab("Population Size")
+}
+```
+
+Try putting in the same parameter values as above but increase the value for $\sigma^2$ to 50. Note the increased stochastic behavior. Now try it with a $\sigma^2$ of 150. Repeat that line of code 10 or so times and note the potential for very different outcomes. 
+
+Here's a nifty function for running the same stochastic model a bunch of times and calculating a probability of establishment (AKA the probability that the population doesn't crash to 0). 
+
+```{r probability of establishment function}
+est_prob <- function(r, n0, tmax, mu, sig, iter){
+  n.final <- c()
+  for(i in 1:iter){
+  Nt <- n0
+  N <- c(Nt)
+  for(i in 1:tmax){
+  dN <- r*Nt*(1 - Nt/rnorm(1, mu, sig))
+  Nt <- ifelse(Nt + dN > 0, Nt + dN, 0)
+  N <- c(N, Nt)
+  }
+    n.final <- c(n.final, N[tmax+1])
+  }
+  sum(n.final > 0)/length(n.final)
+}
+```
+
+### <span style="color: #871FBF;">Exercise 14</span>
+Use this function to plot the probability of establishment v.s. the degree of stochasticity (operationalized here as the standard deviation we're putting into "rnorm()"). Hint: create a vector of values $\sigma^2$ and create a for loop that iterates the 'est_prob()' with each of these values. 
+<br>

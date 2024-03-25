@@ -1,0 +1,245 @@
+---
+title: "Density-Dependence and Stability"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    # keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(6)
+library(ggplot2)
+```
+
+## Introduction
+
+The goals of this weeks lab are the following:
+
+- Review the basics of density-independent and density-dependent population models
+- Introduce ideas regarding equilibria and stability
+- Gain further proficiency with constructing, interrogating, and visualizing population models in R
+- Gain further practice with our modelling workflow
+- Introduce some basics of simulating data from probability distributions
+
+## Density-Independent Growth
+
+Recall that the population size of a population growing exponentially can be described with the following equation:
+
+$$
+N_t = N_0e^{rt}
+$$
+
+Given values for $N_0$ and $r$, we can simulate across a range of $t$ to get a set of values for $N_t$. 
+
+```{r generating some data}
+N0 <- 2
+r <- .6
+t <- 0:10
+Nt <- N0*exp(1)^(r*t)
+Nt
+```
+
+Now we can plot these values to better visualize the change in the growth rate. 
+
+```{r plotting exp values}
+dat <- cbind.data.frame(t, Nt)
+ggplot(data = dat, aes(x = t, y = Nt)) + geom_point() + theme_classic(base_size = 15) +
+  xlab("Time") + ylab("Population Size")
+```
+
+It might also be useful to describe this growth in terms of a difference equation. The difference equation for exponential growth is written as:
+
+$$
+\frac{dN}{dt} = rN
+$$
+
+### <span style="color: #871FBF;">Exercise 1</span>
+Using the parameter values from the previous example, create a plot showing how $\frac{dN}{dt}$ changes across time. 
+<br>
+
+$$\\[.5in]$$
+
+Now that we have some working models, let's explore the influences of the parameters $N_0$ and $r$ on the behavior of the models. We'll want to repeat the process that we've performed in the previous few chunks with different values of $N_0$ and $r$, but we don't want to write repetitive code (think DRY code). One way around that is to write our own functions. Here is a function for plotting the population growth of an exponentially growing population:
+
+```{r exp growth function}
+exp_growth <- function(n0, r, tmax){
+  t <- 0:tmax
+  Nt <- n0*exp(1)^(r*t)
+  dat <- cbind.data.frame(t, Nt)
+  ggplot(data = dat, aes(x = t, y = Nt)) + geom_point() + theme_classic(base_size = 15) + 
+    xlab("Time") + ylab("Population Size")
+}
+```
+
+### <span style="color: #871FBF;">Exercise 2</span>
+Now, write your own function for plotting the instantaneous growth rate over time of a population that is growing exponentially. 
+<br>
+
+$$\\[.5in]$$
+
+Now that we have these two functions, we can play around with them. Pause here and spend some time exploring these functions in your console. Try really small parameter values. Try really big parameter values. Try parameter values that seem ridiculous. Spend some time thinking about the relationship between these parameter values and the output of the model. This is a great way to gain intuition about a model. 
+
+### <span style="color: #871FBF;">Exercise 3</span>
+Create a plot of the population size and a plot of the instantaneous growth rates for each of the three scenarios: 1) a population that is growing, 2) a population that is stagnant, and 3) a population that is decreasing. 
+<br>
+
+### <span style="color: #871FBF;">Exercise 4</span>
+Do you think that proportionally equivalent shifts in $N_0$ or $r$ should result in bigger changes in the growth of a population? For example, if you increased $N_0$ or $r$ wby 10%, which would result in a faster growing population? Write an explanation of your answer, and support your answer with evidence from simulated growth models.
+<br>
+
+$$\\[.5in]$$
+
+These models may work fine for describing density-independent growth of populations that reproduce continuously, but we may wish to describe the growth of an annual plant or a univoltine insect. To do this, recall the following formula for geometric population growth:
+
+$$
+N_t = N_0\lambda^t
+$$
+
+We can calculate the difference in the population size between two time steps using the following equation:
+
+$$
+N_{t+1} = \lambda N_t
+$$
+
+Note that, in practice, this is not a differential equation. Ecologically relevant values do not exist between timesteps.
+
+
+### <span style="color: #871FBF;">Exercise 5</span>
+Describe the difference between $\lambda$ and $r$.
+<br>
+
+$$\\[.5in]$$
+
+Note that although conceptually distinct, $\lambda$ and $r$ are mathematically related with the following equation:
+
+$$
+\lambda = e^r
+$$
+
+## Density-Dependent Growth
+
+Most populations exhibit some form of density-dependence. Often, this is a negative-density dependence that occurs when species approach some carrying capacity. Ecologists often model this type of density-dependence using the logistic equation, a differential equation written as:
+
+$$
+\frac{dN}{dt} = rN(1 - \frac{N}{K})
+$$
+where $K$ represents the carrying capacity of the population. 
+
+During logistic growth, as $N$ approaches $K$, the term $\frac{N}{K}$ approaches $1$. This causes the instantaneous growth rate to approach $0$. 
+
+The non-differential equation form of the logistic equation (ie the solution to the differntial equation) is a bit more complicated and less ecologically intuitive, so we'll instead turn to the difference equation and use this as an opportunity to write a function containing a for loop. The difference equation is a discretized form of the differential equation (which sometimes is a fine enough approximation for continuous growht) that looks like: 
+
+$$
+N_{t+1}-N_t = rN_t(1 - \frac{N_t}{K})
+$$
+
+For loops are used to iterate a process over a set of values. For example, for a sequence of integers between $1$ and $10$, I may want to find the value of each integer squared. One (inefficient) way to do this is to write the following for loop:
+
+```{r example for loop}
+for(i in 1:10){
+  print(i^2)
+}
+```
+
+We'll use for loops in this class as a way of simulating population sizes across a timeframe. Thus, we can simulate a logistically growing population using the following code:
+
+```{r logistic growth}
+r <- 1.2
+Nt <- 1
+K <- 1000
+N <- c(Nt) # this creates a vector where we can store our values, the first value being N0
+for(i in 1:100){
+  dN <- r*Nt*(1 - (Nt/K))
+  Nt <- Nt + dN
+  N <- c(N, Nt)
+}
+plot(1:101, N)
+```
+
+Note that this is discretization will not always be a good approximation of continuous growth when we add more complexity into our population models. Later in the course, to make sense of more complicated differential equations, we'll use numerical solvers.
+
+### <span style="color: #871FBF;">Exercise 6</span>
+Write a function that plots the population size of a logistically growing population over some time period. 
+<br>
+
+### <span style="color: #871FBF;">Exercise 7</span>
+Write a function that plots the instantaneous growth rate (in our case, $N_{t+1}-N_t$) of a population that is growing logistically. 
+<br>
+
+$$\\[.5in]$$
+
+Again, this would be a great time to pause and explore these models across a range of parameter values. 
+
+### <span style="color: #871FBF;">Exercise 8</span>
+Use your function to plot the population size of a logistically growing population for $r = 1.01$, $r = 2$, and $r = 3$. Provide an ecological explanation for the behavior of your model under these three parameterizations. 
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 9</span>
+Generate a sequence of numbers from 0 through 50 with an interval of .01. Assume that these values are population sizes, and for each of these values, calculate the instantaneous growth rate of a logistically growing population with an intrinsic growth rate of 2 and a carrying capacity of 45. Plot the instantaneous growth rate of the population as a function of the population size. Referencing this graph, identify any possible equilibria points of this population. Are these equilibria stable? Why or why not? 
+<br>
+
+$$\\[.5in]$$
+
+Although negative-density dependence is a very common occurrence, we can certainly come up with some examples of potential positive-density dependence. For this reason, let's define a generalized formula of density-dependent growth as:
+
+$$
+\frac{dN}{dt} = N(r + sN)
+$$
+
+Where $s$ describes the direction and magnitude of density-dependence. When $s<0$, $K = -\frac{r}{s}$.
+
+Let's define a function to plot the results of this function:
+
+```{r general density-dependence function}
+ddfun <- function(n0, r, s, tmax){
+  Nt <- n0
+  N <- c(Nt)
+  for(i in 1:tmax){
+    dN <- Nt*(r+s*Nt)
+    Nt <- ifelse(dN+Nt > 0, dN+Nt, 0)
+    N <- c(N, Nt)
+  }
+  dat <- cbind.data.frame(t = 0:tmax, N)
+  ggplot(data = dat, aes(x = t, y = N)) + geom_line() + theme_classic(base_size = 15) +
+    xlab("Time") + ylab("Population Size")
+}
+```
+
+### <span style="color: #871FBF;">Exercise 10</span>
+Use this function to explore the following situations: 
+
+- $r>0$ and $s>0$
+- $r<0$ and $s>0$ (Hint: the result should be dependent on $N_0$ for this one)
+- $r>0$ and $s=0$
+- $r>0$ and $s<0$
+- $r<0$ and $s<0$
+- $r<0$ and $s=0$
+
+Describe the behavior of your models under each of these situations. 
+
+## Allee-effects in a flowering plant
+
+Recall the steps to modeling, adapted from Otto and Day (2007):
+
+1) Formulate a Question
+2) Describe the System
+3) Quantify the System
+4) Interrogate the Equation
+5) Reflect on the Results
+
+Let's apply this framework to the following management problem. A particular endangered flowering plant is being reintroduced into restored prairies. This plant is bumblebee pollinated and is highly dependent on pollination to support sustainable reproductive rates. Land managers are finding that this plant struggles to establish stable populations when planted at low abundances, suggesting some allee point. These land managers have asked you to investigate this phenomenon and identify the minimum number of seeds that should be sown to successfully establish a population?
+
+### <span style="color: #871FBF;">Exercise 11</span>
+
+Select a type of model that we have discussed in lab thus far [Hint: which model has allowed us to explore the dynamics of allee effects?]. Describe the model in terms of the flower system (i.e. define the parameters). What assumptions are required to offer guidance to these land managers? Make some assumptions and simulate from your model and plot the results. Using your model, and given your assumptions, offer guidance to the restoration practitioners. 
+<br>
+
+### <span style="color: #871FBF;">Exercise 12</span>
+Coming full circle, let's revisit the formulation of questions. Please clearly state _two_ ecological questions regarding density-dependence in biological populations. These questions can be questions regarding basic ecology or applied concerns. Keep in mind that good ecological research questions are specific and testable. Instead of asking "How can we speed up the recovery rate of wolf populations during rewilding?" you may wish to ask "What is the effect of habitat heterogeneity on density dependent population growth of wolves during rewilding?". 
+
