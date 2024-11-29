@@ -2,6 +2,7 @@
 title: "Introduction to R"
 output:
   html_document:
+    theme: "flatly"
     toc: true
     toc_depth: 3
     toc_float: true
@@ -19,7 +20,8 @@ The goal for this handout is to familiarize ourselves with R, RStudio, and RMark
 
 Here is a list of learning objectives that we will cover in this worksheet. We will use these skills throughout the course, so it will make your life easier if you get these down early. 
 
-* Basics of troubleshooting (AKA how to use Google)
+* Basics of troubleshooting (AKA how to use the internet)
+* R Projects
 * Performing basic mathematical operations
 * Using functions
 * Installing packages
@@ -28,13 +30,19 @@ Here is a list of learning objectives that we will cover in this worksheet. We w
 * Basics of data wrangling
 * Using RMarkdown
 
-
-
 ## Troubleshooting
 
-Likely the most important skill to have under your belt for coding in R is how to troubleshoot. Regardless of your experience level with R, you are bound to run into issues in the form of error messages or undesirable outputs. Luckily, the internet exists. Not only does the internet exist, but the internet contains, within it, practically endless resources regarding R. All one has to do is copy and paste an error message into a search engine or Google "[x topic] in r" and they're bound to find forums and blog posts dedicated to their issue. We encourage you to practice this skill by attempting to find answers through these resources when you run into issues. However, do not waste lots of time on troubleshooting. Seek out help via peers or your course instructor or TA if you're still having trouble after searching for a solution on your own. 
+Likely the most important skill to have under your belt for coding in R is how to troubleshoot. Regardless of your experience level with R, you are bound to run into issues in the form of error messages or undesirable outputs. Luckily, the internet exists. Not only does the internet exist, but the internet contains, within it, practically endless resources regarding R. All one has to do is copy and paste an error message into a search engine or Google "[x topic] in r" and they're bound to find forums and blog posts dedicated to their issue. Further, within recent years, the development of large language models (LLMs) such as ChatGPT have dramatically changed how many people troubleshoot coding issues (see [this blog post](https://www.zdnet.com/article/how-to-use-chatgpt-to-write-code-what-it-does-well-and-what-it-doesnt/) for a description of how you might use ChatGPT to help you code). We heavily encourage the use of the internet, including LLMs, to aid in your coding for this class.
 
+Additionally, we heavily encourage you to rely on your peers in this class, as well as us (Jeremy & Jeff). Sometimes, you may face specific challenges regarding assignments that are difficult to answer with the help of the internet. _Do not waste hours of time searching the internet for answers._ In these cases, asking peers in lab or on Canvas may be a great option. Alternatively, Jeremy & Jeff are available in or after lecture/lab times as well as during our office hours which are posted on Canvas. However, there is a respectful way to ask people for help with troubleshooting code and we ask that you try to adopt this approach when asking for help. Modified from [this guide on formatting questions on a popular coding forum](https://stackoverflow.com/help/how-to-ask), we request that you: 
 
+- Clearly articulate the goal of your code, including the larger goal and any steps in the process.
+- Describe what you have tried and how the output diverges from your desired or expected outcome. 
+- Present the code that you have tried. 
+
+If you are requesting help via e-mail, please make sure to follow these steps and supply your code in the form of a R Script or RMarkdown file. 
+
+__A final, important note on code troubleshooting:__ To recieve help with code, you MUST know what you are trying to do. In this class, I will ask you to use code to construct and interrogate ecological models. To do this, you will need to understand the model and how you are trying to interrogate it. Many coding problems in this class can be addressed by first by asking yourself "Do I understand what I am trying to code?". If the answer is "no", you must resolve this before asking for help troubleshooting the code itself. Utilize the textbooks, the internet, peers, Jeremy or Jeff for understanding the conceptual components of assignments. 
 
 ## R Markdown
 
@@ -227,7 +235,7 @@ Often, we want to work from raw data without inputting all of the data in R. We 
 A good habit to get into when reading in data from a source location is to set a working directory. This tells R where to look for files when you try to call them. Then, you can more easily read in the file. In the chunk below, there is an example of what a working directory might look like, but _you will need to edit the chunk to represent the location in which you stored your data._
 
 ```{r reading 1}
-setwd("~/Documents/GitHub/PopEcol22/S24/Data") #setting the working directory
+setwd("~/Documents/GitHub/UO-PopEcol/Data") #setting the working directory
 dat <- read.csv("nutrient_data") # reading in the file data and storing as a dataframe
 head(dat) # head() outputs the first x lines of a dataframe (default is 6)
 ```
