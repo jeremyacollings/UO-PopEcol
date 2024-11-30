@@ -54,9 +54,9 @@ Markdown files are a compilation of text and lines of code used for 'literate pr
 
 There are lots of ways to customize R Markdown files, and there is always more to learn about them, but for now, we'll stick to the basics. What you're reading right now is written in markdown syntax, which is mostly just basic text with occasional fancy operators for formatting. We can put in R code by creating a "chunk". A chunk is initiated with three backtick symbols, followed by {r chunk_title}. A chunk is closed with another three backtick symbols. Check the .Rmd file to find examples of chunks. You can also click the "Insert a new code chunk" button while working in a .Rmd file, which should be the green box with a 'c' and a plus sign. 
 
-While completing this worksheet, you will need to type into the markdown file itself ("Week One.Rmd"), but it will be easiest to read the worksheet html file ("Week One.html"). Markdown files are converted to HTML files through a process called "knitting". You can knit the .Rmd file into an HTML file in RStudio using the "Knit" button. Each week, you will download the .Rmd and .html file associated with that week's lab assignment. You will edit your own copy of the .Rmd file, filling in answers (typically as chunks of code) under each of the exercises. You will then knit your completed .Rmd file, check that your file looks correct, and then submit both your final .Rmd file and knitted .html file. 
+While completing this worksheet, you will need to type into the markdown file itself ("Week One.Rmd"), but it will be easiest to read the worksheet html file ("Week One.html"). Markdown files are converted to HTML files through a process called "knitting". You can knit the .Rmd file into an HTML file in RStudio using the "Knit" button. To build up your intuition about how markdown files are made, it will be good to flip back and forth between the .Rmd file and the .html file. 
 
-To build up your intuition about how markdown files are made, it will be good to flip back and forth between the .Rmd file and the .html file. When you see red, bold text that says "Exercise", there is a practice question to answer. Please complete this question in the .Rmd file. When you've completed the worksheet, please save a new copy of the .Rmd file with your initials and knit a new HTML file. Upload both files to canvas. 
+Each week, you will download the .Rmd and .html file associated with that week's lab assignment. We recommend that you immediately save a new version of the .Rmd with your initials appended to the end of the file name. You will edit your own copy of the .Rmd file, filling in answers (typically as chunks of code) under each of the exercises. When you see red, bold text that says "Exercise", there is a practice question to answer. When you have completed the worksheet, you will knit your completed .Rmd file, __check that your file looks correct and that all of your answers are easily read__, and then submit both your final .Rmd file and knitted .html file on Canvas. 
 
 ### <span style="color: #E74C3C;">Exercise 1</span>
 
@@ -93,16 +93,17 @@ Many mathematical operators that we will use require the use of functions that a
 Here are some examples:
 
 ```{r math 3}
-sqrt(36) #square root of 36
-log(100, 10) #log base 10 of 100
+sqrt(36) # square root of 36
+log(100, 10) # log base 10 of 100
 log(100) # natural log of 100 (when base argument is undefined, the default is e)
-exp(2) #e^2
+exp(2) # e^2
 ```
 
 <br>
 
+Notice in the chunk above that there is text to the write of the hashtag symbol. This is called a comment, and it is very very important. Within chunks (or within an R Script), everything will be interpreted as code to be run UNLESS it is preceeded by a hashtag. This enables us to make code slightly more readable (though does not have full flexibility of markdown syntax within a markdown file). It is very important that you comment your code so that others (most often a future version of yourself, but also Jeremy) can understand what you're trying to do. Some people like to comment out the goal of some section of code while others like to comment out a description of what the code is doing. I often use both sorts of comments. 
 
-### <span style="color: #871FBF;">Exercise 1</span>
+### <span style="color: #E74C3C;">Exercise 2</span>
 __If code is required to complete an exercise, please write the code in a chunk. Ensure that the chunk of code and the output of the code is visible in the knitted html document.__
 
 <br>
@@ -114,7 +115,7 @@ Write a line of code to calculate $log_636$
 
 ## Storing Information as Objects
 
-Most of the time, we're not just using R as a calculator. Instead, we perform more complicated tasks on sets of data. We store data in the form of an object that we can then perform tasks on. To store information as an object, we can use the assignment operators "<-" or "=". For example, to store a single value, we can use the following code:
+Most of the time, we're not just using R as a calculator. Instead, we perform more complicated tasks on sets of data. Data (as well as everything else) is stored in the form of an _object_ that we can then perform tasks on. To store information as an object, we can use the assignment operators "<-" or "=". For example, to store a single value, we can use the following code:
 
 ```{r storing 1}
 dat.pt1<- 5 # store the value 5 in an object called 'dat.pt1'
@@ -130,6 +131,8 @@ var3 <- c("red", "red", "red", "blue", "blue", "blue")
 var1
 ```
 
+Note that we can put all sorts of values in a vector. For example, var1 and var2 are both numeric vectors, while var3 is a character vector. As you code more, you will find it helpful to keep track of what sorts of values are stored within your objects. 
+
 We can also combine vectors into a single dataframe. When we do this, we may wish to treat each vector as a column, in which case we'll want to use the function "cbind.data.frame". Alternatively, we may wish to treat each vector as a row, in which case we'll want to use the function "rbind.data.frame". Often, we have vectors of corresponding values that need to be binded as columns such that each row is a different "observation" with associated values. As an example, let's bind the vectors above into a dataframe:
 
 ```{r storing 3}
@@ -139,34 +142,59 @@ dat
 
 <br>
 
+There are a few more object types that you will likely come across in this class, including functions (see below), matrices, arrays, and lists. We'll try to explain these object types as we encounter them. 
 
+Quite often, we wish to access the contents of an object. How you access the contents depends on the type of object, and there are often multiple methods for accessing contents. Square brackets are perhaps the most flexible method for accessing the contents of R objects. We can use integer values to index an object and return the specified element. For example, if I want to access the third element of the var1 vector, I can use the following code: 
 
+```{r index1}
+var1[3]
+```
 
-### <span style="color: #871FBF;">Exercise 2</span>
-Run the following lines of code and see what they return. Describe what the $ and [] operators are doing in this code and how to use them. Try to figure it out by examining the output, but if you get stumped, type into the console "?'\$'".
+Similarly, if I wish to access the 3rd column of the dat dataframe, I can use the following code: 
 
-dat$var1
+```{r index2}
+dat[,3]
+```
 
+Indexing two-dimensional objects using square brackets requires two values, the row and column indices, separated by a comma. When one or both values are left blank (as the row value is in the preceeding chunk), all values for that dimension are returned. 
+
+For objects with named elements, we can use the $ operator. For example, the columns of dat are named, so we can rewrite the last chunk as: 
+
+```{r index3}
 dat$var3
+```
 
-dat$var3[1]
+which returns the same values. If we wanted to, we could name the values of a vector, matrix, or list and using the $ operator to retrieve species values too. 
 
-dat$var3[5]
+Indexes need not be just one integer or one element name. If we place a vector of integers or names into the square brackets following an object's name, we can return each of the indicated values from the object. Alternatively, we can place a vector of integers or names into the square brackets, immediately following a ! operator, to return all elements EXCEPT the specified elements. 
 
-dat[1, 1]
+### <span style="color: #E74C3C;">Exercise 3</span>
 
-dat[1, 3]
-
-dat[1, ]
-
-dat[, 3]
+Write some code to return the 2nd and 4th value of var2. 
 
 <br>
 
+Finally, we can use Boolean (true or false) to index values. The output is the elements indicated by the position of TRUE values. We can do so explicitly, like in the following chunk of code: 
 
-## Using Functions
+```{r index4}
+var1[c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)]
+```
 
-As you've seen with some of the mathematical operations we'll be using, R contains many useful functions to accomplish a variety of tasks. Functions are a string of characters followed by a set of parentheses. Within the parentheses are arguments that specify what you want the function to do. 
+We can use Boolean as indexes via logical statements. Logical statements are evaluated by R and return Boolean, which become the indices if used within square brackets. For example, if I wanted to return the values of var1 for which var3 is "red", I can use the following chunk of code: 
+
+```{r index5}
+var1[var3 == "red"]
+```
+
+### <span style="color: #E74C3C;">Exercise 4</span>
+
+Create a new dataframe which containing columns for your top 5 favorite organisms, which kingdom each belongs to, and your personal rating of how cute they are on a scale from 1 to 5 with 1 being not cute at all 5 being the cutest thing imaginable (thus, three columns). Then, write a line of code to return the names of any species that scored less than a 3 on cuteness. 
+
+<br>
+
+## Functions and Packages
+
+As you've seen with some of the mathematical operations we'll be using, R contains many useful functions to accomplish a variety of tasks. Functions are objects that do stuff, and they look like a string of characters followed by a set of parentheses. Within the parentheses are arguments that modify what exactly the function does. 
 
 Functions are used to simplify tasks. For example, we could find the sum of all the data for var1 this way:
 
@@ -206,14 +234,14 @@ Another note on troubleshooting: you can learn more about a function by Googling
 
 
 
-### <span style="color: #871FBF;">Exercise 3</span>
+### <span style="color: #E74C3C;">Exercise 3</span>
 Find the average of var1 for values where var3 is red.
 
 <br>
 
 
 
-### <span style="color: #871FBF;">Exercise 4</span>
+### <span style="color: #E74C3C;">Exercise 4</span>
 Besides the vector to be summed, what additional argument does the sum() function contain? What is the purpose of this additional argument?
 
 <br>
@@ -292,7 +320,7 @@ plot(dat$stem.height, dat$fruit.number)
 
 
 
-#### <span style="color: #871FBF;">Exercise 5</span>
+#### <span style="color: #E74C3C;">Exercise 5</span>
 A) Identify and describe at least 5 additional arguments that can be defined to adjust the aesthetics of this plot. *(Hint: start by looking at help file for `plot` but also look at `par` which is mentioned in the plot help)*
 
 B) Make a new plot using these 5+ modifications
@@ -312,7 +340,7 @@ ggplot(data = dat, aes(x = stem.height, y = fruit.number)) + geom_point()
 
 
 
-#### <span style="color: #871FBF;">Exercise 6</span>
+#### <span style="color: #E74C3C;">Exercise 6</span>
 Recreate each of these two plots, but change the axis labels to "Stem Height" and "Number of Fruits per Plant".
 
 <br>
@@ -326,7 +354,7 @@ This data frame contains fruit count for the study species, but we would like to
 
 
 
-### <span style="color: #871FBF;">Exercise 7</span>
+### <span style="color: #E74C3C;">Exercise 7</span>
 Use these averages to create a new variable within the dataframe for the approximate seed output of each plant.
 
 <br>
@@ -341,28 +369,28 @@ dat$seed <- ifelse(dat$nutrient == "l", dat$fruit*low.ave,
 dat$seed
 ```
 
-### <span style="color: #871FBF;">Exercise 8</span>
+### <span style="color: #E74C3C;">Exercise 8</span>
 Calculate the average seed output for each nutrient treatment.
 
 <br>
 
 
 
-### <span style="color: #871FBF;">Exercise 9</span>
+### <span style="color: #E74C3C;">Exercise 9</span>
 Make a bar plot of seed output under each nutrient treatment.
 
 <br>
 
 
 
-### <span style="color: #871FBF;">Exercise 10</span>
+### <span style="color: #E74C3C;">Exercise 10</span>
 Make a scatter plot to compare seed output and stem height.
 
 <br>
 
 
 
-### <span style="color: #871FBF;">Exercise 11</span>
+### <span style="color: #E74C3C;">Exercise 11</span>
 Make a scatter plot to compare seed output and stem height, but include a best fit line for each of the three nutrient treatments. Color the points and lines by treatment.
 
 <br>
