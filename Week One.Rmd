@@ -50,11 +50,25 @@ RStudio Projects are a way to manage and organize coding projects. If you work o
 
 ## R Markdown
 
-Markdown files are a compilation of text and lines of code. They're great for communicating the output of code (or the code itself) without the reader getting bogged down in a messy script. There are lots of ways to customize R Markdown files, and there is always more to learn about them, but for now, we'll stick to the basics. What you're reading right now is basic text. We can put in R code by creating a "chunk". While completing this worksheet, you will need to type into the markdown file itself ("Week One.Rmd"), but it will be easiest to read the worksheet html file ("Week One.html"). Markdown files are converted to HTML files through a process called "knitting". You can knit the .Rmd file into an HTML file in RStudio using the "Knit" button. 
+Markdown files are a compilation of text and lines of code used for 'literate programming'. The goal of markdown files aren't just to code up some process, but also to communicate the process and output of the code. You can imagine that reading a couple hundrer lines of R code might not be nearly as helpful as reading explanations of the problem, explanations of the approach, the code, figures produced by the code, and interpretation of the figures. 
 
-To build up your intuition about how markdown files are made, it will be good to flip back and forth between the .Rmd file and the .html file. When you see a large question mark and bold text in the HTML file (or text in the Rmd file bookmarked by "__"), there is a practice question to answer. Please complete this question in the .Rmd file. When you've completed the worksheet, please save a new copy of the .Rmd file with your initials and knit a new HTML file. Upload both files to canvas. 
+There are lots of ways to customize R Markdown files, and there is always more to learn about them, but for now, we'll stick to the basics. What you're reading right now is written in markdown syntax, which is mostly just basic text with occasional fancy operators for formatting. We can put in R code by creating a "chunk". A chunk is initiated with three backtick symbols, followed by {r chunk_title}. A chunk is closed with another three backtick symbols. Check the .Rmd file to find examples of chunks. You can also click the "Insert a new code chunk" button while working in a .Rmd file, which should be the green box with a 'c' and a plus sign. 
 
+While completing this worksheet, you will need to type into the markdown file itself ("Week One.Rmd"), but it will be easiest to read the worksheet html file ("Week One.html"). Markdown files are converted to HTML files through a process called "knitting". You can knit the .Rmd file into an HTML file in RStudio using the "Knit" button. Each week, you will download the .Rmd and .html file associated with that week's lab assignment. You will edit your own copy of the .Rmd file, filling in answers (typically as chunks of code) under each of the exercises. You will then knit your completed .Rmd file, check that your file looks correct, and then submit both your final .Rmd file and knitted .html file. 
 
+To build up your intuition about how markdown files are made, it will be good to flip back and forth between the .Rmd file and the .html file. When you see red, bold text that says "Exercise", there is a practice question to answer. Please complete this question in the .Rmd file. When you've completed the worksheet, please save a new copy of the .Rmd file with your initials and knit a new HTML file. Upload both files to canvas. 
+
+### <span style="color: #E74C3C;">Exercise 1</span>
+
+Flip back to the .Rmd file and identify where you see the following formating syntax: 
+
+- text bookmarked with two underscores
+- text in square brackets followed by text in parentheses
+- text followed by hashtags
+
+Identify what each of these formatting operations do. Feel free to use the internet if you cannot figure it out, but please do note when these formatting tricks come up in your .Rmd files. 
+
+<br>
 
 ## Mathematical Operations
 
