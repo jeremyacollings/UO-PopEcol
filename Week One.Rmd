@@ -56,7 +56,7 @@ There are lots of ways to customize R Markdown files, and there is always more t
 
 While completing this worksheet, you will need to type into the markdown file itself ("Week One.Rmd"), but it will be easiest to read the worksheet html file ("Week One.html"). Markdown files are converted to HTML files through a process called "knitting". You can knit the .Rmd file into an HTML file in RStudio using the "Knit" button. To build up your intuition about how markdown files are made, it will be good to flip back and forth between the .Rmd file and the .html file. 
 
-Each week, you will download the .Rmd and .html file associated with that week's lab assignment. We recommend that you immediately save a new version of the .Rmd with your initials appended to the end of the file name. You will edit your own copy of the .Rmd file, filling in answers (typically as chunks of code) under each of the exercises. When you see red, bold text that says "Exercise", there is a practice question to answer. When you have completed the worksheet, you will knit your completed .Rmd file, __check that your file looks correct and that all of your answers are easily read__, and then submit both your final .Rmd file and knitted .html file on Canvas. 
+Each week, you will download the .Rmd and .html file associated with that week's lab assignment. We recommend that you immediately save a new version of the .Rmd with your initials appended to the end of the file name. You will edit your own copy of the .Rmd file, filling in answers under each of the exercises. When you see red, bold text that says "Exercise", there is a practice question to answer. If code is required to complete the exercise, write the code in a code chunk. If a verbal answer is required to complete the exercise, write your answer outside of a code chunk. When you have completed the worksheet, you will knit your completed .Rmd file, __check that your file looks correct and that all of your answers are easily read__, and then submit both your final .Rmd file and knitted .html file on Canvas. 
 
 ### <span style="color: #E74C3C;">Exercise 1</span>
 
@@ -186,6 +186,8 @@ We can use Boolean as indexes via logical statements. Logical statements are eva
 var1[var3 == "red"]
 ```
 
+Note that "==" is a logic operator meaning "is equal to". It's easy to mix this up with "=", which is an assignment operator. Other logical operators are "<", ">", "<=", ">=", and "%in%", which mean "is less than", "is greater than", "is less than or equal to", "is greater than or equal to", and "is within" respectively. You can compound logical statements with "&" which means "and" or "|" which means "or".
+
 ### <span style="color: #E74C3C;">Exercise 4</span>
 
 Create a new dataframe which containing columns for your top 5 favorite organisms, which kingdom each belongs to, and your personal rating of how cute they are on a scale from 1 to 5 with 1 being not cute at all 5 being the cutest thing imaginable (thus, three columns). Then, write a line of code to return the names of any species that scored less than a 3 on cuteness. 
@@ -214,83 +216,22 @@ If we were to be working from the dat dataframe, we could do the same thing by s
 sum(dat$var1)
 ```
 
-If we wanted to calculate the sum of var1 for rows in which var3 is red, we will need to subset the data. There are a few ways to do this, but here is one:
 
-```{r functions 4}
-sum(dat$var1[dat$var3 == "red"])
-```
-
-Here, the "==" operator means "is equal to". Note that "=" is already used as an assignment operator (synonymous to "<-"), so we must use "==" when subsetting.  
-
-We can get this same value from taking the sum for var1 in which var3 is NOT blue (because, in this case, if the value is not blue, it is red):
-
-```{r functions 5}
-sum(dat$var1[dat$var3 != "blue"])
-```
-
-Another note on troubleshooting: you can learn more about a function by Googling it, or by typing in the a "?" followed by the name of the function in the console (for example, type into the console: `?sum`). The function documentation should open in the help tab, and you can find out what the function does, what package it is contained in, and which arguments it takes. 
+Another note on troubleshooting: you can learn more about a function by Googling it, or by typing in the a "?" followed by the name of the function in the console (for example, type into the console: `?sum`). The function documentation should open in the help tab, and you can find out what the function does, what package it is contained in, and which arguments it takes. Three of Jeremy's favorite organisms are white-tailed deer, eastern hemlocks, and rhinoceros beetles. You'll receive five extra credit points on this lab assignment if you append these three species to your dataframe in exercise 3 (along with their kingdoms and your personal ratings).
 
 <br>
 
-
-
-### <span style="color: #E74C3C;">Exercise 3</span>
+### <span style="color: #E74C3C;">Exercise 5</span>
 Find the average of var1 for values where var3 is red.
 
 <br>
 
-
-
-### <span style="color: #E74C3C;">Exercise 4</span>
-Besides the vector to be summed, what additional argument does the sum() function contain? What is the purpose of this additional argument?
+### <span style="color: #E74C3C;">Exercise 6</span>
+Besides the vector to be summed, what additional argument does the sum() function contain? What is the purpose of this additional argument? Remember that you can find a list of arguments that a function takes by looking at the documentation for the function. Retrieve the documentation by googling it, or by simple typing "?" followed by the name of the function in the console. 
 
 <br>
 
-
-## Generating and Reading in Data
-
-As you've seen, we can generate our own data by typing out individual values. If we want these values as a vector, we use the c() function. Values can be numeric or strings of characters. For example:
-
-```{r generating 1}
-size <- c(6.7, 8.7, 12.3, 6.5, 4.9)
-id <- c("aa1d", "ab1e", "ac1d", "bb1d", "aa2e")
-```
-
-We can also generate our own data using a few operators and functions. For example, if we'd like a sequence of numbers, one way we can do this is:
-
-```{r generating 2}
-1:100
-```
-
-We can also use the seq() function to be more specific about how we want R to generate a sequence. (try typing in `?seq` to see how it works)
-
-```{r generating 3}
-seq(from = 1, to = 100, by = 2)
-```
-
-If we want the same value repeated, we can use the rep() function as such:
-
-```{r generating 4}
-rep(3, 10)
-```
-
-We will learn about other ways to generate data next week when we learn about taking random samples. 
-
-Often, we want to work from raw data without inputting all of the data in R. We can input data from a variety of file types using a set of functions. Most often, we will read in csv files using the read.csv() function and specifying the file path. For example, lets load in a sample dataset. Make sure that you have downloaded the "nutrient_data" file. 
-
-A good habit to get into when reading in data from a source location is to set a working directory. This tells R where to look for files when you try to call them. Then, you can more easily read in the file. In the chunk below, there is an example of what a working directory might look like, but _you will need to edit the chunk to represent the location in which you stored your data._
-
-```{r reading 1}
-setwd("~/Documents/GitHub/UO-PopEcol/Data") #setting the working directory
-dat <- read.csv("nutrient_data") # reading in the file data and storing as a dataframe
-head(dat) # head() outputs the first x lines of a dataframe (default is 6)
-```
-
-
-
-## Packages
-
-Not all functions that exist are available in base R. Often, we want to use functions that are found within certain packages. Thus, installing and loading packages is an important skill. One package many R users find indispensable is the tidyverse package. To install the tidyverse package, _run this line of code in your console_:
+Not all functions that exist are available in the base R packages. Often, we want to use functions that are found within additional packages that do not come preinstalled with R. Thus, installing and loading packages is an important skill. One package many R users find indispensable is the tidyverse package. To install the tidyverse package, _run this line of code in your console_:
 
 install.packages("tidyverse")
 
@@ -300,27 +241,104 @@ Note that this code is not in a chunk. We will likely compile the markdown file 
 library(tidyverse)
 ```
 
+Tidyverse is not only a package, but is an entire dialect of coding in the R language. Many tasks can either be accomplished using base R functions or by using the functions found in the tidyverse, but each uses a slightly different programming paradigm. For example, let's say that I have data on the fecundity of two species of flour beetle (_Tribolium_) across a temperature gradient. I'll make this dataframe of fake data in the following chunk using the base R dialect: 
 
+```{r base r example}
+N_sp <- 2 # number of species
+N_temp <- 3 # number of temperature treatments
+N_rep <- 5 # number of replicates
+
+# make dataframe
+tribolium_dat <- cbind.data.frame(sp = rep(c("confusum", "castaneum"), 
+                                           each = N_temp*N_rep), 
+                                  temp = rep(rep(c(18, 20, 22), 
+                                             N_rep), N_sp))
+
+# fill in fecundity data with random numbers from Poisson distribution
+tribolium_dat$fecundity[which(tribolium_dat$sp == "confusum")] <- rpois(n = tribolium_dat$temp[which(tribolium_dat$sp == "confusum")], lambda = tribolium_dat$temp[which(tribolium_dat$sp == "confusum")] * 15)
+
+tribolium_dat$fecundity[which(tribolium_dat$sp == "castaneum")] <- rpois(n = tribolium_dat$temp[which(tribolium_dat$sp == "castaneum")], lambda = tribolium_dat$temp[which(tribolium_dat$sp == "castaneum")] * 18)
+
+head(tribolium_dat)
+```
+
+Notice three new functions: rep(), rpois(), and head(). Take a moment and try to figure out what each of them does (but don't get bogged down in the details, we'll go over rpois() much more later on). I could've also made this dataframe using the tidyverse dialect as follows:
+
+```{r tidyverse example}
+N_sp <- 2 # number of species
+N_temp <- 3 # number of temperature treatments
+N_rep <- 5 # number of replicates
+
+# make dataframe
+tribolium_dat <- cbind.data.frame(sp = rep(c("confusum", "castaneum"), 
+                                           each = N_temp*N_rep), 
+                                  temp = rep(rep(c(18, 20, 22), 
+                                             N_rep), N_sp)) %>%
+  mutate(fecundity = case_when(
+    sp == "confusum" ~ rpois(n(), temp * 15), 
+    sp == "castaneum" ~ rpois(n(), temp * 18)
+  ))
+
+tribolium_dat %>% head()
+```
+
+This looks a little nicer. One big difference is the use of the "%>%" operator. This is a pipe, and when you see it, you should read it as "and then". So the code above says "make this dataframe, AND THEN, make a new column of fecundity values". The pipe takes the output of the code upstream of the pipe and feeds it into the functions downstream of the pipe. 
+
+For the sake of continuing to compare the dialects, lets work more with this dataset. If I wanted to 1) convert the temperatures from Celsius to Kelvin and 2) get the average and standard deviation of fecundity per species per temperature treatment, I could do so in base R like this: 
+
+```{r base r example 2}
+tribolium_dat$temp <- tribolium_dat$temp + 273.15
+tapply(tribolium_dat$fecundity, list(tribolium_dat$sp, tribolium_dat$temp), 
+       mean)
+tapply(tribolium_dat$fecundity, list(tribolium_dat$sp, tribolium_dat$temp), 
+       sd)
+```
+
+Or in tidyverse like this: 
+
+```{r tidyverse example 2}
+tribolium_dat %>% 
+  mutate(temp = temp + 273.15) %>%
+  group_by(sp, temp) %>%
+  summarise(mean.fec = mean(fecundity), 
+            sd.fec = sd(fecundity))
+```
+
+Again, don't worry too much about the details here. You may be unfamiliar with functions like tapply(), mutate(), group_by(), and summarise(). As you encounter new functions, it's a good idea to try to get an idea of what each does by checking their documentation. As you code more, you'll start to remember the functions and how to use them. 
+
+The main difference that we want you to notice is that Base R performs tasks step by step as seperate lines of code. Tidyverse applies functions to data one after another using pipes. Though many frown on this, Jeremy uses a mix of both, and you will see both dialects in your worksheets. You may wish to stay consistent and use either Base R coding or tidyverse coding.
+
+## Reading in Data
+
+Up until this point, we've been working with toy datasets that we've generated ourselves. In fact, for most of this class, we will be generating our own data, and we will try to communicate just how useful working with 'fake' data can be. Often, however, we often are working with real data that is stored in a spreadsheet or csv file. We need to be able to read in data from some outside file. Most often, we will read in csv files using the read.csv() function and specifying the file path. For example, lets load in a sample dataset. Make sure that you have downloaded the "nutrient_data" file and that it is stored in this same directory (or folder, we'll use these terms interchangeably) as this script. Alternatively, you may wish to have a subdirectory of this directory dedicated to data. 
+
+Normally, you'll need to be aware of what the current "working directory" is. The working directory is where R is going to go to look for things by default. If you made an R Studio project and are working from it, however, R will assume that the working directory is wherever your R Studio project is. This will make life much easier. You can confirm that your working directory is set correctly by calling the getwd() function. If your working directory was not what you wanted it to be, you could change your working directory using the setwd() function. However, you should not need to do this if you are working within an R Studio project. 
+
+Once you have the "nutrient_data.csv" file in your directory, run the following chunk. Modify the file.path depending on whether you are storing your data in a separate data folder or not: 
+
+```{r reading 1}
+dat <- read.csv(file.path("Data", "nutrient_data.csv")) # reading in the file data and storing as a dataframe
+
+head(dat)
+```
+
+The file.path() function is a nifty function that takes the components of the file path (ie the directory names and the file name) and strings them together using either a forward or backslash depending on your operating system. If you are not storing your data file in a subdirectory, you don't need that function and can instead just write read.csv("nutrient_data.csv"). We've read in our data! Now lets do things with it!
 
 ## Data Visualization
 
-Data visualization is an important step for performing many quantitative tasks. Often, we visualize data at various stages during data analysis or model construction. In R, people mostly make plots to visualize their data with the tools already available in 'base R', or with the set of functions in the ggplot2 package (already loaded in the tidyverse package). Here, we'll show how to make a quick scatter plot using both approaches. 
-
+Data visualization is an important step for performing many quantitative tasks. Often, we visualize data at various stages during data analysis or model construction. How we visualize data depends on which dialect of R we are coding in (but remember that you may wish to mix dialects). There are plotting functions in Base R, but there is a generally nicer set of plotting functions in tidyverse using the "ggplot2" package within the tidyverse package. Here, we'll show how to make a quick scatter plot using both approaches. 
 
 ### Scatter plot in base R
 
 Making a scatter plot in Base R is pretty straight forward. We can use the plot() function and define an x and y variable. 
 
 ```{r plotting 1}
-plot(dat$stem.height, dat$fruit.number)
+plot(x = dat$stem.height, y = dat$fruit.number)
 ```
 
 <br>
 
-
-
-
-#### <span style="color: #E74C3C;">Exercise 5</span>
+#### <span style="color: #E74C3C;">Exercise 7</span>
 A) Identify and describe at least 5 additional arguments that can be defined to adjust the aesthetics of this plot. *(Hint: start by looking at help file for `plot` but also look at `par` which is mentioned in the plot help)*
 
 B) Make a new plot using these 5+ modifications
@@ -338,63 +356,43 @@ ggplot(data = dat, aes(x = stem.height, y = fruit.number)) + geom_point()
 
 <br>
 
-
-
-#### <span style="color: #E74C3C;">Exercise 6</span>
-Recreate each of these two plots, but change the axis labels to "Stem Height" and "Number of Fruits per Plant".
+#### <span style="color: #E74C3C;">Exercise 8</span>
+Recreate each of these two plots, but change the x and y axis labels to "Stem Height" and "Number of Fruits per Plant" (as opposed to "stem.height" and "fruit.number").
 
 <br>
 
-
 ## Practice Problems
+
+__Remember: the first step to coding is figuring out what you are trying to do with your code. If you get stuck, write down in plain language the steps that you need to complete, and then try to code up each step one at a time.__
 
 This data frame contains fruit count for the study species, but we would like to have data for fecundity as total seed output. From a separate study, we have data for the average seeds per fruit of this species under the three nutrient treatments. That study found that this species produces 3.4, 4.2, and 5.0 seeds per fruit, on average, in low, medium, and high nutrient level treatments, respectively. 
 
 <br>
 
-
-
-### <span style="color: #E74C3C;">Exercise 7</span>
-Use these averages to create a new variable within the dataframe for the approximate seed output of each plant.
+### <span style="color: #E74C3C;">Exercise 9</span>
+Use these averages to create a new variable within the dataframe for the approximate seed output of each plant. Because the average seeds/fruit is dependent on the nutrient treatment, you may need to use so sort of ifelse statement or the case_when() function (take a moment to google these methods if you are not already familiar).
 
 <br>
-```{r }
-dat <- cbind.data.frame(nutrient = c("l", "l", "m", "m", "h", "h"), 
-                 fruit = c(2, 3, 2, 5, 5, 4))
-low.ave = 3.4
-med.ave = 4.2
-high.ave = 5
-dat$seed <- ifelse(dat$nutrient == "l", dat$fruit*low.ave, 
-                   ifelse(dat$nutrient == "m", dat$fruit*med.ave, dat$fruit*high.ave))
-dat$seed
-```
 
-### <span style="color: #E74C3C;">Exercise 8</span>
+### <span style="color: #E74C3C;">Exercise 10</span>
 Calculate the average seed output for each nutrient treatment.
 
 <br>
 
-
-
-### <span style="color: #E74C3C;">Exercise 9</span>
+### <span style="color: #E74C3C;">Exercise 11</span>
 Make a bar plot of seed output under each nutrient treatment.
 
 <br>
 
-
-
-### <span style="color: #E74C3C;">Exercise 10</span>
+### <span style="color: #E74C3C;">Exercise 12</span>
 Make a scatter plot to compare seed output and stem height.
 
 <br>
 
-
-
-### <span style="color: #E74C3C;">Exercise 11</span>
-Make a scatter plot to compare seed output and stem height, but include a best fit line for each of the three nutrient treatments. Color the points and lines by treatment.
+### <span style="color: #E74C3C;">Exercise 13</span>
+Make a scatter plot to compare seed output and stem height, but include a best fit line (you may need to google how to do this) for each of the three nutrient treatments. Color the points and lines by treatment.
 
 <br>
-
 
 ## Additional resources
 
