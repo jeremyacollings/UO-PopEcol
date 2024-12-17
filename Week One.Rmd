@@ -25,6 +25,7 @@ Here is a list of learning objectives that we will cover in this worksheet. We w
 * Performing basic mathematical operations
 * Using functions
 * Installing packages
+* Writing functions
 * Generating data
 * Reading in data
 * Basics of data wrangling
@@ -196,6 +197,8 @@ Create a new dataframe which containing columns for your top 5 favorite organism
 
 ## Functions and Packages
 
+### Using Functions
+
 As you've seen with some of the mathematical operations we'll be using, R contains many useful functions to accomplish a variety of tasks. Functions are objects that do stuff, and they look like a string of characters followed by a set of parentheses. Within the parentheses are arguments that modify what exactly the function does. 
 
 Functions are used to simplify tasks. For example, we could find the sum of all the data for var1 this way:
@@ -204,7 +207,7 @@ Functions are used to simplify tasks. For example, we could find the sum of all 
 5 + 4 + 6 + 3 + 5 + 5
 ```
 
-Or, we could find the sum using the sum() function:
+Or, we could find the sum using the `sum()` function:
 
 ```{r functions 2}
 sum(var1)
@@ -221,19 +224,21 @@ Another note on troubleshooting: you can learn more about a function by Googling
 
 <br>
 
-### <span style="color: #E74C3C;">Exercise 5</span>
+#### <span style="color: #E74C3C;">Exercise 5</span>
 Find the average of var1 for values where var3 is red.
 
 <br>
 
-### <span style="color: #E74C3C;">Exercise 6</span>
-Besides the vector to be summed, what additional argument does the sum() function contain? What is the purpose of this additional argument? Remember that you can find a list of arguments that a function takes by looking at the documentation for the function. Retrieve the documentation by googling it, or by simple typing "?" followed by the name of the function in the console. 
+#### <span style="color: #E74C3C;">Exercise 6</span>
+Besides the vector to be summed, what additional argument does the `sum()` function contain? What is the purpose of this additional argument? Remember that you can find a list of arguments that a function takes by looking at the documentation for the function. Retrieve the documentation by googling it, or by simple typing "?" followed by the name of the function in the console. 
 
 <br>
 
+### Accessing Functions Within New Packages
+
 Not all functions that exist are available in the base R packages. Often, we want to use functions that are found within additional packages that do not come preinstalled with R. Thus, installing and loading packages is an important skill. One package many R users find indispensable is the tidyverse package. To install the tidyverse package, _run this line of code in your console_:
 
-install.packages("tidyverse")
+`install.packages("tidyverse")`
 
 Note that this code is not in a chunk. We will likely compile the markdown file multiple times. Markdown will get finicky about trying to compile a .Rmd file in which we're installing a package. You should only have to install any given package once on your computer. Every time you open R or RStudio, however, you will need to load the package like this:
 
@@ -262,7 +267,7 @@ tribolium_dat$fecundity[which(tribolium_dat$sp == "castaneum")] <- rpois(n = tri
 head(tribolium_dat)
 ```
 
-Notice three new functions: rep(), rpois(), and head(). Take a moment and try to figure out what each of them does (but don't get bogged down in the details, we'll go over rpois() much more later on). I could've also made this dataframe using the tidyverse dialect as follows:
+Notice three new functions: `rep()`, `rpois()`, and `head()`. Take a moment and try to figure out what each of them does (but don't get bogged down in the details, we'll go over `rpois()` much more later on). I could've also made this dataframe using the tidyverse dialect as follows:
 
 ```{r tidyverse example}
 N_sp <- 2 # number of species
@@ -304,15 +309,55 @@ tribolium_dat %>%
             sd.fec = sd(fecundity))
 ```
 
-Again, don't worry too much about the details here. You may be unfamiliar with functions like tapply(), mutate(), group_by(), and summarise(). As you encounter new functions, it's a good idea to try to get an idea of what each does by checking their documentation. As you code more, you'll start to remember the functions and how to use them. 
+Again, don't worry too much about the details here. You may be unfamiliar with functions like `tapply()`, `mutate()`, `group_by()`, and `summarise()`. As you encounter new functions, it's a good idea to try to get an idea of what each does by checking their documentation. As you code more, you'll start to remember the functions and how to use them. 
 
 The main difference that we want you to notice is that Base R performs tasks step by step as seperate lines of code. Tidyverse applies functions to data one after another using pipes. Though many frown on this, Jeremy uses a mix of both, and you will see both dialects in your worksheets. You may wish to stay consistent and use either Base R coding or tidyverse coding.
 
+### Writing Your Own Functions
+
+Sometimes, there will be some procedure that you want to implement repeatedly for which there is not already a function. If this procedure is something that you'll only do once, then you may just choose to code it up manually. If this procedure is something that you are going to repeat, especially if you're going to repeat this procedure with different inputs, then you should probably consider writing a function. Writing your own function is often necessary for writing clean, concise code such that you don't have tens or even hundreds of lines copied and pasted over and over again. Writing functions might even be necessary for using some existing functions (we will see an example of this in the next lab worksheet). Luckily, writing a function is not as complicated as it may seem (though there are certainly lots of advanced methods and nuance to writing elegant functions). 
+
+To write a function, I recommend starting out by writing the code you need to accomplish your procedure. Then, identify any aspects of the procedure that you may wish to modify if you were to use this function again. Often, these are inputs for which you will do some operation on, but they can also be options to which you feed a `TRUE` or `FALSE`. Once you've written the code and identified which aspects of the code you wish to be flexible for the function user, you wrap the code in the function syntax as follows: 
+
+```
+name_of_function <- function(inputs){
+  ...
+}
+```
+
+As an example, let's say that I have a bunch of character vectors which contain the names of flowers that I noticed on my walk to work each day. For each vector, I'd like to know how many species I noticed, and the percent of those species that are in some particular genus. I'd also like to return these numbers wrapped up in a sentence that reflects my enthusiasm for looking at pretty flowers. To do this, I could write the following function: 
+
+```{r}
+flower_function <- function(flower_list, genus){
+  n_spp <- length(unique(flower_list))
+  prop_lupine <- (sum(grepl(genus, flower_list))/length(flower_list)) * 100
+  print(paste("Wow! You saw ", n_spp, " species of flowers on your walk to work, and ", 
+        round(prop_lupine, 2), " percent were ", genus, "! That's really neat.", sep = ""))
+}
+```
+
+Now let's use our very helpful function: 
+
+```{r}
+# make my vector of flowers
+fwrs <- c("Lupinus rivularis", "Gernaium robertianum", "Bellis perennis", "Eschscholzia californica", "Lupinus bicolor", "Gaultheria shallon", "Bellis perennis", "Dicentra formosa", "Cornus sericea", "Geranium robertianum")
+
+# get my enthusiastic report
+flower_function(fwrs, "Lupinus")
+```
+
+<br>
+
+#### <span style="color: #E74C3C;">Exercise 7</span>
+Based off of Exercise 4, write a function that takes your favorite organisms data frame and returns the species scoring $x$ or higher on cuteness where $x$ is some input of your function. Use your function to find the species which scored at least a 2.5 on the cuteness scale. 
+
+<br>
+
 ## Reading in Data
 
-Up until this point, we've been working with toy datasets that we've generated ourselves. In fact, for most of this class, we will be generating our own data, and we will try to communicate just how useful working with 'fake' data can be. Often, however, we often are working with real data that is stored in a spreadsheet or csv file. We need to be able to read in data from some outside file. Most often, we will read in csv files using the read.csv() function and specifying the file path. For example, lets load in a sample dataset. Make sure that you have downloaded the "nutrient_data" file and that it is stored in this same directory (or folder, we'll use these terms interchangeably) as this script. Alternatively, you may wish to have a subdirectory of this directory dedicated to data. 
+Up until this point, we've been working with toy datasets that we've generated ourselves. In fact, for most of this class, we will be generating our own data, and we will try to communicate just how useful working with 'fake' data can be. Often, however, we often are working with real data that is stored in a spreadsheet or csv file. We need to be able to read in data from some outside file. Most often, we will read in csv files using the `read.csv()` function and specifying the file path. For example, lets load in a sample dataset. Make sure that you have downloaded the "nutrient_data" file and that it is stored in this same directory (or folder, we'll use these terms interchangeably) as this script. Alternatively, you may wish to have a subdirectory of this directory dedicated to data. 
 
-Normally, you'll need to be aware of what the current "working directory" is. The working directory is where R is going to go to look for things by default. If you made an R Studio project and are working from it, however, R will assume that the working directory is wherever your R Studio project is. This will make life much easier. You can confirm that your working directory is set correctly by calling the getwd() function. If your working directory was not what you wanted it to be, you could change your working directory using the setwd() function. However, you should not need to do this if you are working within an R Studio project. 
+Normally, you'll need to be aware of what the current "working directory" is. The working directory is where R is going to go to look for things by default. If you made an R Studio project and are working from it, however, R will assume that the working directory is wherever your R Studio project is. This will make life much easier. You can confirm that your working directory is set correctly by calling the `getwd()` function. If your working directory was not what you wanted it to be, you could change your working directory using the `setwd()` function. However, you should not need to do this if you are working within an R Studio project. 
 
 Once you have the "nutrient_data.csv" file in your directory, run the following chunk. Modify the file.path depending on whether you are storing your data in a separate data folder or not: 
 
@@ -322,7 +367,7 @@ dat <- read.csv(file.path("Data", "nutrient_data.csv")) # reading in the file da
 head(dat)
 ```
 
-The file.path() function is a nifty function that takes the components of the file path (ie the directory names and the file name) and strings them together using either a forward or backslash depending on your operating system. If you are not storing your data file in a subdirectory, you don't need that function and can instead just write read.csv("nutrient_data.csv"). We've read in our data! Now lets do things with it!
+The `file.path()` function is a nifty function that takes the components of the file path (ie the directory names and the file name) and strings them together using either a forward or backslash depending on your operating system. If you are not storing your data file in a subdirectory, you don't need that function and can instead just write read.csv("nutrient_data.csv"). We've read in our data! Now lets do things with it!
 
 ## Data Visualization
 
@@ -330,7 +375,7 @@ Data visualization is an important step for performing many quantitative tasks. 
 
 ### Scatter plot in base R
 
-Making a scatter plot in Base R is pretty straight forward. We can use the plot() function and define an x and y variable. 
+Making a scatter plot in Base R is pretty straight forward. We can use the `plot()` function and define an x and y variable. 
 
 ```{r plotting 1}
 plot(x = dat$stem.height, y = dat$fruit.number)
@@ -338,7 +383,7 @@ plot(x = dat$stem.height, y = dat$fruit.number)
 
 <br>
 
-#### <span style="color: #E74C3C;">Exercise 7</span>
+#### <span style="color: #E74C3C;">Exercise 8</span>
 A) Identify and describe at least 5 additional arguments that can be defined to adjust the aesthetics of this plot. *(Hint: start by looking at help file for `plot` but also look at `par` which is mentioned in the plot help)*
 
 B) Make a new plot using these 5+ modifications
@@ -356,7 +401,7 @@ ggplot(data = dat, aes(x = stem.height, y = fruit.number)) + geom_point()
 
 <br>
 
-#### <span style="color: #E74C3C;">Exercise 8</span>
+#### <span style="color: #E74C3C;">Exercise 9</span>
 Recreate each of these two plots, but change the x and y axis labels to "Stem Height" and "Number of Fruits per Plant" (as opposed to "stem.height" and "fruit.number").
 
 <br>
@@ -369,27 +414,27 @@ This data frame contains fruit count for the study species, but we would like to
 
 <br>
 
-### <span style="color: #E74C3C;">Exercise 9</span>
-Use these averages to create a new variable within the dataframe for the approximate seed output of each plant. Because the average seeds/fruit is dependent on the nutrient treatment, you may need to use so sort of ifelse statement or the case_when() function (take a moment to google these methods if you are not already familiar).
-
-<br>
-
 ### <span style="color: #E74C3C;">Exercise 10</span>
-Calculate the average seed output for each nutrient treatment.
+Use these averages to create a new variable within the dataframe for the approximate seed output of each plant. Because the average seeds/fruit is dependent on the nutrient treatment, you may need to use so sort of ifelse statement or the `case_when()` function (take a moment to google these methods if you are not already familiar).
 
 <br>
 
 ### <span style="color: #E74C3C;">Exercise 11</span>
-Make a bar plot of seed output under each nutrient treatment.
+Calculate the average seed output for each nutrient treatment.
 
 <br>
 
 ### <span style="color: #E74C3C;">Exercise 12</span>
-Make a scatter plot to compare seed output and stem height.
+Make a bar plot of seed output under each nutrient treatment.
 
 <br>
 
 ### <span style="color: #E74C3C;">Exercise 13</span>
+Make a scatter plot to compare seed output and stem height.
+
+<br>
+
+### <span style="color: #E74C3C;">Exercise 14</span>
 Make a scatter plot to compare seed output and stem height, but include a best fit line (you may need to google how to do this) for each of the three nutrient treatments. Color the points and lines by treatment.
 
 <br>
