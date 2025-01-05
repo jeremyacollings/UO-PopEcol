@@ -1,0 +1,446 @@
+---
+title: "Density-(In)Dependence, Point Equilibria, and Linear Stability"
+output:
+  html_document:
+    theme: "flatly"
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    # keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(6)
+library(tidyverse)
+library(deSolve)
+```
+
+# Introduction
+
+The goals of this weeks lab are the following:
+
+- Introduce the use of ordinary differential equations and the deSolve package for population modeling
+- Review the basics of density-independent and density-dependent population models
+- Introduce ideas regarding equilibria, stability, and chaos
+- Introduce the Generalized Lotka-Volterra model as a simple extension of logistic growth
+- Gain further proficiency with constructing, interrogating, and visualizing population models in R
+
+New Models: exponential growth model; logistic growth model; generalized Lotka-Volterra model
+New Tools: numerical simulation with ODE solvers; identification of equilibria; linear stability analysis; birfurcation diagrams
+
+# ODEs and deSolve
+
+Recall that one decision we must make when constructing a population model is whether our population grows <font color="#E0AC00"> __discretely__ </font> or <font color="#E0AC00"> __continuously__ </font>. Today, we will mostly assume that our populations grow continuously (though we will take a detour to examine characteristics of discrete-time logistic growth). When we model continuously growing populations, we typically use <font color="#E0AC00"> __differential equations__ </font> which define the <font color="#E0AC00"> __instantaneous growth rate__ </font> of a population. Note that this is the growth rate of the population under a given set of values for the <font color="#E0AC00"> __state variables__ </font> (typically population densities at a given time) and assuming a set of values for the underlying population <font color="#E0AC00"> __parameters__ </font>. This is different than the <font color="#E0AC00"> __intrinsic growth rate__ </font> which is a parameter describing the per capita growth rate, often assuming no density-dependence. 
+
+When we use <font color="#E0AC00"> __ordinary differential equations (ODEs)__ </font> to simulate population dynamics, we want to calculate the instantaneous growth rate of a population _practically_ continuously across some time frame, calculating a new population size from the old population size and the current instantaneous growth rate. I say _practically_ continuously because what we actually do is calculate the new population size at some very small interval throughout the time frame. For each interval, we take the integral of the differential equation to get the growth during that very small interval. Because these equations quickly become difficult to find the integral of <font color="#E0AC00"> __analytically__ </font> like you may have done if you took a calculus class, we instead find the integral <font color="#E0AC00"> __numerically__ </font>. We use algorithms called <font color="#E0AC00"> __ODE solvers__ </font> that try to approximate the integral. If you haven't already, please install the "deSolve" package which contains the solvers that we will use in this class. 
+
+We will walk through the implementation of these solvers through deSolve in the following section using the exponential growth equation. 
+
+# Density-Independent Growth
+
+So where do we even begin with building population models? That task may sound daunting if you're new to modeling or population ecology. There are so many physiological, ecological, and evolutionary processes that determine the growth of any given population! Well, to start, let's use a model that ignores all of that. Cutting away unnecessary detail is one of the most important skills as an ecologist, so let's cut away nearly all ecological details by using a simple exponential model for population growth. The <font color="#E0AC00"> __exponential model__ </font> is a simple model that will serve as the basis for many other models we'll see throughout this course. 
+
+Recall that the size of a population growing exponentially can be described with the following equation:
+
+$$
+N_t = N_0e^{rt}
+$$
+
+Remember though that we often prefer to work with differential equations (mostly because the exponential growth equation is one of the few population models that we can define as an equation... so we'll need to get comfortable with differential equations quickly). Taking the derivative of the previous equation, we get: 
+
+$$
+\frac{dN}{dt} = rN
+$$
+
+Although we could use the $N_t = N_0e^{rt}$ equation to directly calculate the growth of a population over time, let's use this simple population growth model to introduce using differential equation solvers using the $\frac{dN}{dt} = rN$ equation. Soon, we will learn about population models for which no closed form solution exists. 
+
+The first step to simulating population growth using deSolve is to define the population model in the form of a function: 
+
+```{r}
+exp_mod <- function(time, state, parameters) {
+  with(as.list(c(state, parameters)), { # using these objects ...
+    dN <- r * N # the differential equation for N
+    list(c(dN)) # return the rate of change
+  })
+}
+```
+
+Recall that when we define our own functions, we need to tell R what inputs the function needs and then we need to describe what to do with those inputs. Here, we want our function to take time (which will be supplied to the function later), some vector of <font color="#E0AC00"> __initial values__ </font> for our state variables (in this case, just $N$), and some vector of parameters (in this case, just $r$). Our function is then going to use those vectors (the `with()` function keeps our code nice and tidy when we have lots of state variables or parameters), calculate the instantaneous growth rate ($dN/dt$) and then return those values. 
+
+Perhaps predictably, we then need to define our initial values, parameters, and the time points that we want to record the values of the population size for: 
+
+```{r}
+init_vals <- c(N = 2)
+pars <- c(r = .35)
+t <- seq(from = 1, to = 25, by = 0.1)
+```
+
+Now that we've defined our initial values, parameters, and our sequence of time points, let's implement our ODE solvers using the `ode()` function. We'll feed it our initial values as `y`, our time sequence as `times`, our function as `func`, and our parameters as `parms`. 
+
+```{r}
+output <- ode(y = init_vals, times = t, func = exp_mod, parms = pars)
+head(output)
+```
+As you can see, the `ode()` function spits out a data frame of our state variables across our specific time sequence. Now we can take this data frame and plot the values, creating a plot of the population's time series: 
+
+```{r}
+output %>%
+  ggplot(aes(x = time, y = N)) + 
+  geom_line(size = 2) + 
+  theme_classic(base_size = 15) + 
+  xlab("Time") + ylab("Population Size")
+```
+
+Looks like exponential growth to me! 
+
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #FFE285; border-radius: 5px;">
+__A note on the use of simulations in population modeling:__ Recall that once we've defined a population model, there are three broad categories that we'll learn about in this class to interrogate our model: _Parameter Estimation_, _Analysis_, and _Simulation-Based Methods_. We have now learned how to simulate from continuous, deterministic population models using ODE solvers. In this assignment, we are principally using simulations to visualize population dynamics and make some fairly shallow inference. In later assignments, we will learn how to make more robust and interesting inference about population dynamics using simulations. 
+Like each of these three categories of methods, simulation-based methods have pro's and con's and we often complement simulation-based methods with parameter estimation and/or analysis. 
+
+Simulation-based methods really shine when we are working with more complex models. When we work with stochastic models or models with much more complexity, it becomes very difficult to perform mathematical analysis. In these cases, numerical simulations of the population dynamics can serve as an alternative to gaining intuition through analysis. There are a few tradeoffs, however. Firstly, simulation-based methods can become quite computationally intensive, depending on how complex the model is and also what specific numerical methods we're using to simulate these dynamics. Secondly, the results from simulation-based methods aren't always as clean as the results from analytical methods. Partly because analytical methods have historically been the preferred method for theoretical investigations of population dynamics, there is a rich literature regarding the methods and interpretation of the results for the analysis sof population models. The analogous literature for simulation-based methods, while quickly growing, still lags behind. We will discuss analytical methods a bit more in this assignment, and will revisit the pro's and con's of each of these three categories of methods throughout this course. 
+</div>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 1  </font>
+
+__Compile the above example into your own function which plots an exponentially growing population. Your function should include the population growth rate, the initial value of the population, and the number of time steps (ie the duration of the time series) as arguments. Use your function to plot a ten time point time series of a population with a growth rate of 0.1 and an initial population size of 2.__
+</div>
+<br>
+
+A central goal of population ecology is to understand how certain population parameters impact population growth. Often, when we introduce a new population model, we will ask that you explore the role of the underlying parameters in mediating population growth. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 2  </font>
+
+__Simulate the population growth across 5 years of three populations having intrinsic growth rates of .5, 1, and 1.5. Have each population start with an initial population size of 1. Display these population's time series as a line graph with different colors for each population.  __
+</div>
+<br>
+
+These models may work fine for describing <font color="#E0AC00"> __density-independent growth__ </font> of populations that reproduce continuously, but we may wish to describe the growth of an annual plant or a univoltine insect. To do this, recall the following formula for <font color="#E0AC00"> __geometric population growth__ </font>:
+
+$$
+N_t = N_0\lambda^t
+$$
+
+We can calculate the difference in the population size between two time steps using the following equation:
+
+$$
+N_{t+1} = \lambda N_t
+$$
+
+Note that, in practice, this is not a differential equation. Ecologically relevant values do not exist between time steps. Thus, we would not use deSolve to simulate this discrete growth. Instead, we might use what is called a <font color="#E0AC00"> __loop__ </font>. A loop iterates a process, and different types of loops iterate the process differently. Among the most commonly used loops is the _for loop_ which iterates a process for a set of values. For example, we might wish to iterate the calculation of $N_{t+1}$ based off of $N_t$ for some number of years. The code to do this might look like the following: 
+
+```{r}
+# define our parameter(s) and initial value(s)
+N_0 <- 1
+lambda <- 1.2
+
+# define the length of our simulation (AKA the number of iterations)
+iter <- 25
+
+# initialize a vector of values for N_t
+Ns <- c(N_0)
+for(i in 1:iter){ # i is an index which takes on the values of 1:iter
+  Ns[i+1] <- lambda * Ns[i] # calculate and store our new value for N_{t+1}
+}
+Ns
+```
+
+When we use for loops, we specify an index (here, `i`) and a vector of values that `i` takes on during the loop (here, `1:iter`). The code within the squiggly brackets is run first with `i` as the first value in the vector. the code is then run again with `i` as the next value, and so on for each value in the vector. For loops are kinda tricky for a lot of folks when they first learn to code, so don't worry if this feels confusing now. We'll gain more practice with for loops throughout this quarter, especially when we work with discrete time population models. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 3  </font>
+
+__As review, describe what values of $\lambda$ and $r$ indicate negative, no, and positive population growth.__
+</div>
+<br>
+
+Recall that although not equivalent, $\lambda$ and $r$ are mathematically related with the following equation:
+
+$$
+\lambda = e^r
+$$
+
+# Density-Dependent Growth
+
+Alright, so populations do not grow exponentially indefinitely. Does this mean that the exponential model is wrong? Remember that _all models are wrong_. In lieu of "correct" models, let's instead consider when a given model can be useful. Certainly there are some systems that can be described adequately (for a certain goal) with an exponential growth model, but more commonly we may want to incorporate a near universal ecological process: density-dependence. A still quite simple but much more useful model, then, would be the logistic growth model. 
+
+Recall that the instantaneous growth rate of a population that is growing logistically can be described as the following differential equation:
+
+$$
+dN/dt = rN(1 - N/K)
+$$
+
+To gain intuition about logistic growth, we'll first play around with some simulations. Then, we'll take an analytical approach and introduce some ideas about equilibria and stability. 
+
+To simulate the dynamics of a logistically growing population, let's define the logistic growth function that we'll feed into the `ode()` function. 
+
+```{r}
+log_mod <- function(time, state, parameters) {
+  with(as.list(c(state, parameters)), { # using these objects ...
+    dN <- r * N * (1 - N/K) # the differential equation for N
+    list(c(dN)) # return the rate of change
+  })
+}
+```
+
+Now, let's define the parameters of the equation ($r$ and $K$), the initial values for the state variable ($N$), and the time vector that we would like to save the values of the state variables. 
+
+```{r}
+init_vals <- c(N = 2)
+pars <- c(r = .5, K = 50)
+t <- seq(from = 1, to = 25, by = 0.1)
+```
+
+Now, we can run the ODE solver and simulate the time series of our logistically growing population. Let's also make a pretty graph while we're at it. 
+
+```{r}
+output <- ode(y = init_vals, times = t, func = log_mod, parms = pars)
+output %>%
+  ggplot(aes(x = time, y = N)) + 
+  geom_line(size = 2) + 
+  theme_classic(base_size = 15) + 
+  xlab("Time") + ylab("Population Size")
+```
+
+Lookin' good! 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 4  </font>
+
+__Compile the above example into your own function which plots a logistically growing population. Your function should include the intrinsic growth rate, the carrying capacity,the initial value of the population, and the number of time steps (ie the duration of the time series) as arguments. Use your function to plot a twenty time point time series of a population with a growth rate of 0.1, a carrying capacity of 100, and an initial population size of 2.__
+</div>
+<br>
+
+## Analysis of the Logistic Growth Model
+
+If we wish to understand the fundamental behavior of a population, assuming some relatively simple population model, analytical methods are typically the preferred approach. <font color="#E0AC00"> __Analysis__ </font> often includes using tools from various disciplines of math such as calculus and linear algebra, and many of the results of analytical methods are relatively straight forward (and omit biases introduced through decisions involved in simulation-based methods). Even more importantly, these methods can often be implemented on pen and paper or simple computers, which is why these have been some of the more popular methods in population ecology pre-modern computers. 
+
+Some of the most common analytical methods have to do with identifying <font color="#E0AC00"> __equilibria__ </font> and characterizing the <font color="#E0AC00"> __stability__ </font> around those equilibria. Let's introduce some of these methods by first defining equilibira. When ecologists discuss equilibria, we are referring to the typical behavior of a system. In population ecology, we often use equilibrium to describe the typical population sizes of the components of a system (e.g. different species, different groups of individuals within a population, different alleles in a population). _Take a moment to consider what the equilibrium/a might be for the logistic growth model._
+
+So how do we identify equilibria? Recall that differential equations describe the instantaneous population growth rate as a function of the value of the state variable(s) (typically population sizes). So if we want to identify the population sizes at which populations typically stay at, we should look for population sizes which produce an instantaneous growth rate of $0$. Thus, to identify equilibria points (we'll discuss other types of equilibria besides point equilibria throughout this course) of a population model, defined as a differential equation, we set the differential equation equal to $0$ and solve for the population sizes. For the logistic growth model defined above, there are two equilibria: a <font color="#E0AC00"> __trivial equilibrium__ </font> of $N = 0$ and a more interesting equilibrium of $N = K$. Thus, we often refer to the carrying capacity as the equilibrium abundance of a logistically growing population. This math is relatively simple to do by hand, but as equations get more complicated, we might resort to root solver algorithms that either identify the exact roots when given an equation and some parameter values or that provide a symbolic (parameter agnostic) expression of the roots. R has some built in functions for finding exact roots, such as `uniroot()` and `polyroot()`. Additional packages have more sophisticated numerical solvers, and some packages also enable symbolic solutions but these packages are a bit more involved. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 5  </font>
+
+__This discussion of identifying equilibria is focused principally on theoretical methods. Brainstorm and describe at least two reasons why you think that identifying equilibria in the real world (i.e. _empirically_) would be difficult.__
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 6  </font>
+
+__Let's take a moment to visualize what we just discussed (another check in addition to hand calculations and programmatic operations). Consider a population that is growing logistically with an intrinsic growth rate of $0.5$ and a carrying capacity of $100$. Plot the instantaneous growth rate $dN/dt$ as a function of the population size $N$ for a population with an intrinsic growth rate of 1 and another population wuth an intrinsic growth rate of 2. Make sure that these curves are on the same graph to facilitate comparison.__
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 7  </font>
+
+__Using your graph from Exercise 6, describe how you could identify the equilibria points.__
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 8  </font>
+
+__Do the equilibria change when we change the intrinsic growth rate of the logistically growing population? Does anything else change? __
+</div>
+<br>
+
+We now know how to identify point equilibria, but just knowing the equilibria of a population doesn't tell us much. The logistic growth model contains two equilibria, so what are some ways that we can meaningfully describe variation in our equilibria? One characteristic that varies between different equilibria is _stability_. This term can be used in a few different ways, but for now what we mean by _stability_ is whether or not a population will return to a given equilibrium if it is nudged away from it. This is rather important as ecologists are often concerned with what disturbances will do to a system. If a forest is at equilibrium, will it return to that same equilibrium after a windstorm? Will the introduction of an invasive predator shift the dynamics of a food web from their pre-invaded equilibrium dynamics? Again, in practice, this is a really challenging question to address for real populations, but we can build up intuition and insights from analysis of more simple, deterministic models. 
+
+One technique to characterize the stability of equilibria is called <font color="#E0AC00"> __linear stability analysis__ </font>. We call it linear stability analysis because we attempt to reduce the information contained in our _nonlinear_ dynamical systems model into a simple _linear_ equation that we can evaluate at the equilibrium. What this looks like exactly depends on the complexity of the population model, but generally the goal is to evaluate whether (infinitesimally) small nudges away from an equilibrium point results in the return to that equilibrium or whether this pushes the population further away from the original equilibrium point. We might also use linear stability analysis to compare how strong the pull toward a stable equilibrium is relative to other stable equilibria. Let's walk through this process using the logistic growth model from above. 
+
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #FFE285; border-radius: 5px;">
+__A note on math behind a linear stability analysis:__ So we said that our goal in conducting a linear stability analysis is to identify the dynamics of a population model at it's equilibrium, and we do this by simplifying our nonlinear population model into some linear form. To do this 'linearization' at a given point, we can use a very important tool from mathematics called _Taylor expansion_. The goal of a Taylor expansion is to approximate a function by using information about the function's value, slope, and curvature at a given point. We do this by taking a bunch of derivatives, sequentially adding more and more detail to our approximation and leading to an increasingly close approximation. If all we want, though, is to linearize a function at a point, we simply need to find the slope of the function at that point by taking the function's first derivative. This is called the first order term of the Taylor series.
+
+It is not important that you understand Taylor expansions for this class. For linear stability analysis, we only care about the first derivative (the slope) because it tells us whether small changes near an equilibrium grow (unstable) or shrink (stable). That means that we will only ever need to find first derivatives of functions. In the case of one-dimensional dynamical systems, this means evaluating the derivative of the dynamical system model at it's equilibria. 
+
+For systems with multiple variables (like populations of interacting species), we use a tool called the _Jacobian matrix_. The Jacobian is a collection of partial derivatives, with each entry describing how one variable influences another near the equilibrium. To understand the stability of these systems, we use a mathematical operation called _eigenanalysis_, which distills the information in the Jacobian into key values (_eigenvalues_). These values tell us whether the equilibrium is stable or unstable (and also whether the system will oscillate, but we'll get to that later).
+
+Don't worry if this is all a bit much right now. You do not need to know anything about Taylor expansions for this course. You also will never need to take any derivatives or do an eigenanalysis by hand. For this course, _how_ you do these mathematical processes is less important than _why_ you do them, and we will often ignore the mathematical detail in favor of learning how to implement these tools in R. We will also learn more about the Jacobian and eigenanalysis in future worksheets. 
+</div>
+
+We have already identified the equilibria of this model, so let's now figure out whether $N = 0$ and $N = K$ are stable equilibria or not. To do this, we will find the derivative of our differential equation at each of our equilibria. Recall that, in this case, the derivative of the logistic growth differential equation is a new equation which calculates the speed and direction of change in the instantaneous growth rate equation as a function of the population size. Thus, the derivative evaluated at our equilibria characterizes whether the growth rate increases or decreases (and how fast it does so) from zero at $N = 0$ and $N = K$. The derivative is: 
+
+$$
+d^2N/dt^2 = r(1-\frac{N}{K})-\frac{N r}{K}
+$$
+
+_Take a moment to evaluate this equation when $N = 0$ and when $N = K$._ Notice that the intrinsic growth rate is in this equation, so while it does not affect the location of the equilibria, it does influence the dynamics around each of the two equilibria. Evaluated at $N = 0$, the derivative is $r$. What does this mean though? Well, at $N = 0$, the slope of the tangent line is positive. Thus, an infinitesimally small nudge to the right will lead to $dN/dt > 0$ and the population will grow away from $0$. If it were biologically possible, an infinitesimally small nudge to the left will lead to $dN/dt < 0$ and the population would decrease away from $0$. Conversely, when $N = K$, the derivative is $-r$ so the slope of the tangent line is negative. Thus, an infinitesimally small nudge to the right of $K$ will lead to $dN/dt < 0$ and the population will decrease back to $K$. An infinitesimally small nudge to the left will lead to $dN/dt > 0$ and the population will increase back to $K$. What we've just described is an <font color="#E0AC00"> __unstable equilibrium__ </font> at $0$ and a <font color="#E0AC00"> __stable equilibrium__ </font> at $K$. For a differential equation with just one state variable of interest, determining whether an equilibrium is stable or not is as simple as evaluating the derivative of the differential equation at the equilibrium and determining whether this value is positive or negative. 
+
+To do this programattically, we can make use of the base R function `D()` which finds the derivative of an equation when possible with available algorithms. The output of this function is an <font color="#E0AC00"> __expression__ </font> which we can evaluate using the `eval()` function. Let's return to our logistically growing population with a carrying capacity of $100$ and an intrinsic growth rate of $1$. Here is some code to perform a linear stability analysis: 
+
+```{r}
+log_deriv <- deriv(expression(1 * N * (1 - N / 100)), "N") # get derivative
+
+# evaluate derivative at equilibria and store as vector
+sens_values <- c(zero = attr(eval(log_deriv, envir = list(N = 0)), "gradient"), 
+                 k = attr(eval(log_deriv, envir = list(N = 100)), "gradient"))
+
+# display
+sens_values
+```
+
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 9  </font>
+
+__When we perform a linear stability analysis on a one-dimensional population, the magnitude of the derivative evaluated at the equilibrium describes how stable or unstable an equilibirum is and can be used to compare across equilibrium and models. Based on this information, what is the relationship between the intrinsic growth rate and the stability at carrying capacity for a logistically growing population?__
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 10  </font>
+
+__Does the exponential growth model from above contain any equilibria? If so, which of the equilibria are stable and which are not?__
+</div>
+<br>
+
+## Discrete Logistic Growth & Chaos
+
+Keep in mind that while we've primarily been working with models for continuously growing populations during this worksheet, we can define a discrete analogue to the logistic growth equation that might better suit organisms who's populations growth discretely. The difference equation for such a model might look like: 
+
+$$
+N_{t+1} - N_t = \lambda * N_t (1 - N_t/K)
+$$
+
+As we did with our geometric growth model above, we can simulate the population dynamics for a discrete, logistically growing population using the following for loop: 
+
+```{r}
+# define our parameter(s) and initial value(s)
+N_0 <- 1
+lambda <- 1
+K <- 100
+
+# define the length of our simulation (AKA the number of iterations)
+iter <- 25
+
+# initialize a vector of values for N_t
+Ns <- c(N_0)
+for(i in 1:iter){ # i is an index which takes on the values of 1:iter
+  delta_N <- lambda * Ns[i] * (1 - Ns[i]/K) # calculate difference
+  Ns[i+1] <- Ns[i] +  delta_N # calculate new pop size
+}
+Ns
+```
+
+Let's graph these values. Perhaps we should try to emphasize the discrete growth by ditching our solid curve and adopting points and a smaller dashed line to show the general trend. 
+
+```{r}
+cbind.data.frame(N = Ns, t = 0:iter) %>%
+  ggplot(aes(t, N)) + 
+  geom_point(size = 2) + geom_line(size = 1, linetype = "dashed") + 
+  theme_classic() + xlab("Time") + ylab("Population Size")
+```
+
+Looks qualitatively similar to the continuous logistic growth we've worked with above! Let's do a more formal comparison between the continuous and discrete models. Let's also compare these models under a range of values for the intrinsic growth rate... just for fun. We'll have you do that in the next exercise.
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 11  </font>
+
+__Simulate the growth of a continuous, logistically growing population and a discrete, logistically growing population, each with three different values for $r$: $r = 0.05$, $r = 0.5$, and $r = 1$ (remember that our discrete logistic growth model is not parameterized in terms of $r$). For each of these models, keep the carrying capacity constant at $100$ and keep the initial population size constant at $1$. Then, plot these six time series with different colors for each value of $r$ and faceted by whether the model is continuous or discrete. There are many ways to facet, but you may use `facet_wrap()` if you are using `ggplot()` or you may try out the package `patchwork` which helps arrange multiple plots.__
+</div>
+<br>
+
+If you did Exercise 10 correctly, you should have noticed that the discrete logistic growth simulations diverged from the continuous logistic growth simulations for those larger values of $r$. You should find that the discrete simulations with $r = 0.05$ produce a very similar graph to the continuous model. You may have noticed that $r = 0.5$ looks a bit tempermental at first and then calms down. This behavior where the state variables hop up and down, settling into some intermediate equilibrium point as time goes on, is called <font color="#E0AC00"> __dampened oscillations__ </font>. It may seem that for $r = 1$, the population dynamics are almost random. Importantly, they are not random, but they are <font color="#E0AC00"> __chaotic__ </font>. Recall that we are working exclusively with deterministic models, so these seemingly random simulation outputs are not random. If you repeatedly reran your simulation with the same parameter values and initial values, you would generate identical time series. If there was a stochastic component of this model (either demographic, environmental, or otherwise), each simulation would result in slightly different results.
+
+Alright, so we know that the parameter values matter for determining the dynamics of discrete logistic growth. The intrinsic growth rate determines whether we have an equilibrium point, some sort of oscillatory behavior, or this odd _chaotic_ behavior. We also know that running this model over and over again doesn't seem to affect the results (whereas repeated runs would impact the results if we were working with a stochastic version of the model). What about the initial values? 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 12  </font>
+
+__Simulate the growth of a continuous, logistically growing population and a discrete, logistically growing population, each with two different initial values for $N$: $N_0 = 1$, $N_0 = 1 + 1*10^{-20}$. Note that these two numbers are VERY similar, but they are not quite the same. For each of these models, keep the carrying capacity constant at $100$ and keep the intrinsic growth rate constant at $r = 1$ (so we should observe chaotic behavior in the discrete model). Then, plot these four time series with different colors for each value of $N_0$ and faceted by whether the model is continuous or discrete.__
+</div>
+<br>
+
+You should have noticed that _nearly_ identical values for the initial values create very different time series in the discrete model but not the continuous. At any given time point, the value of $N$ is quite different between our two discrete simulations, whereas differences between our values for $N$ on any given year dissipate with time in our continuous models. This behavior is called <font color="#E0AC00"> __sensitivity to initial conditions__ </font> and is an important feature of _chaos_. It turns out that chaos shows up in a lot of places, including many of our meteorological models. This may be one of the main reasons why weather is so difficult to predict. Any slight bit of measurement error may lead to quite different predictions. Nevertheless, chaos is only one impediment to predicting actual population dynamics. Compounding layers of stochastic processes and the inability to ever truly know the structural form of real population growth in nature makes it exceedingly difficult to forecast population dynamics. Further, it is quite difficult to identify which of these factors is contributing the the _seemingly_ random dynamics of real populations. The jury is still out on whether chaos is a common trait amongst real populations. 
+
+# Generalized Lotka-Volterra
+
+So far, we have explore a lovely baseline model for population growth, the exponential growth model. We have also explored a still quite simple, but remarkably more realistic model that incorporates density-dependence, the logistic growth model. The last model that we will explore in this worksheet moves past density-dependence in single populations and incoporates a more complex form of density-dependence: <font color="#E0AC00"> __species interactions__ </font>. Although this is not a common pedagological trajectory in most population ecology textbooks to introduce species interactions so soon, we would like to equip you early with the power to not only explore the dynamics of single populations, but to use population models to study whole communities. In fact, some portion of community ecology employs population models to study the dynamics of communities. This should make some sense as communities are made up of populations. 
+
+The <font color="#E0AC00"> __generalized Lotka-Volterra (gLV)__ </font> model is a versatile model that is used to explore the population dynamics of many different, co-occurring populations that may or may not interact with one another. With a few assumptions, we can use this model to explore predator-prey interactions, competition, mutualisms, commensalisms, etc. As long as we feel comfortable reducing a species interaction into some linear dependence of population growth on interacting species' densities, then we can use the gLV. 
+
+First, let's introduce a new parameterization of the logistic growth model. Above, we parameterized the logistic growth model in terms of the carrying capacity $K$, but what does $K$ mean? Imposing a carrying capacity suggests that there is some negative density-dependence. Mechanistically, this could arise from direct or indirect competition between individuals, but either way we can reduce this down to a parameter that describes the per-capita effect of individuals on the population growth rate. We can call this parameter $\alpha$. It should be intuitive that there is a negative relationship between the strength of competition, $\alpha$, and the carrying capacity $K$. In fact, the carrying capacity is the inverse of the intraspecific competition coefficient. If we chose to represent negative-density dependence as negative values of $\alpha$ (some folks choose to represent the strength of competition as positive values of $\alpha$; it's always good to check), then we can say that $\alpha = -1/K$. Thus, our new parameterization of the logistic growth equation becomes: 
+
+$$
+\frac{dN}{dt} = rN(1 + \alpha N)
+$$
+
+Now that we have a parameter that represents intraspecific density-dependence, it's a simple extension to define parameters that represent interspecific density-dependence. In such cases, we might define an <font color="#E0AC00"> __interaction matrix__ </font> $\textbf{A}$ where the rows (often denoted as $i$) of this matrix represent the affected species and the columns of this matrix (often denoted as $j$) represent the affecting species. Thus, some entry of $\textbf{A}$ can be called $\alpha_{ij}$ and represents the per-capita effect of species $j$ on species $i$'s instantaneous growth rate. A gLV defines the instantaneous growth rate of species $i$ as a linear combination of the co-occurring species densities $N_j$ and their respective interaction coefficients $\alpha_{ij}$: 
+
+$$
+\frac{dN_i}{dt} = r_iN_i(1 + \sum_{j = 1}^S\alpha_{ij}N_j)
+$$
+
+where $i$ can equal $j$. $S$ is the total number of species, and the $\sum$ operator tells us to take the sum of all of the terms held within it (actually, it's just a for loop where we keeping adding new values of $N_j\alpha_{ij}$). So now we have a dynamical systems model which has a unique differential equation for each species. You could also think about it (or code it) as a single vector-valued differential equation.
+
+Let's see this in action. Here, we'll simulate the dynamics of a three species competitive community (ie all entries in $\textbf{A}$ are negative). Perhaps these are three bacterial strains duking it out for shared substrates in your gut microbiome, or maybe these are three species of birds, each of which being susceptible to the same viral pathogen such that increasing the density of one species creates more of this generalist viral pathogen to infect one of the other co-occuring species. Here's some code to simulate these dynamics: 
+
+```{r}
+# define the model to feed into ode()
+gLV_mod <- function(time, state, parameters) {
+  with(as.list(c(state, parameters)), { # using these objects ...
+    dN1 <- r1*N1*(1 - (N1*alpha11 + N2*alpha12 + N3*alpha13)) # sp 1
+    dN2 <- r2*N2*(1 - (N1*alpha21 + N2*alpha22 + N3*alpha23)) # sp 1  
+    dN3 <- r3*N3*(1 - (N1*alpha31 + N2*alpha32 + N3*alpha33)) # sp 1
+    list(c(dN1, dN2, dN3)) # return the rate of change
+  })
+}
+
+# define our parameters, initial values, and time sequence
+init_vals <- c(N1 = 20, N2 = 20, N3 = 20)
+pars <- c(r1 = 0.6, r2 = 0.55, r3 = 0.65, 
+          alpha11 = 0.01, alpha12 = 0.008, alpha13 = 0.007, 
+          alpha21 = 0.0085, alpha22 = 0.011, alpha23 = 0.0075, 
+          alpha31 = 0.009, alpha32 = 0.007, alpha33 = 0.009)
+t <- seq(from = 1, to = 100, by = 0.1)
+
+# simulate the dynamics
+output <- ode(y = init_vals, times = t, func = gLV_mod, parms = pars)
+
+# plot
+output %>%
+  as.data.frame() %>%
+  pivot_longer(cols = c(N1, N2, N3), names_to = "sp", values_to = "N") %>%
+  ggplot(aes(x = time, y = N, color = sp)) + 
+  geom_line(size = 2) + 
+  theme_classic(base_size = 15) + 
+  xlab("Time") + ylab("Population Size")
+```
+
+Neat! Looks like all species settle at positive values by the end of the simulation. We might say that all three species coexist with one another. In fact, these sorts of models are used frequently to study a core question in ecology: Why do competing species coexist with one another? These models have also been used to ask many, many other interesting questions in community ecology. We will work more with gLVs later in the course, and in future worksheets we will learn how to conduct a linear stability analysis of such multivariate dynamical systems models. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 13  </font>
+
+__Thus far, we have primarily focused on negative density dependence, but what about positive density-dependence? Using our $\alpha$ parameterization of the logistic growth equation, simulate the dynamics of a population with positive density-dependence by using a positive value of $\alpha$.__
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 14  </font>
+
+__Generally, do you think that positive density-dependence _stabilizes_ or _destabilizes_ system dynamics? __
+</div>
+<br>
+
+
