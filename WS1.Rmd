@@ -1,0 +1,501 @@
+---
+title: "Introduction to R"
+output:
+  html_document:
+    theme: "flatly"
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    # keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+<font color="#E0AC00"> __Vocabulary terms__ </font> will appear in bold, yellow font. <font color="#8B16B6"> __Exercises to be graded__ </font> will appear in purple boxes. <font color="#5DBA49"> __Clarification about learning objectives and what information can be safely ignored__ </font> will appear in bold, green font. 
+
+# Introduction
+
+The goal for this handout is to familiarize ourselves with R, RStudio, and RMarkdown and to gain intuition about how coding can be used in the field of population ecology. We will work through this markdown file, running lines of code and writing our own code to practice basic skills in R. 
+
+<font color="#5DBA49"> 
+__Here is a list of learning objectives that we will cover in this worksheet. We will use these skills throughout the course, so it will make your life easier if you get these down early.__ 
+
+* __Basics of troubleshooting (AKA how to use the internet)__
+* __R Projects__
+* __Performing basic mathematical operations__
+* __Using functions__
+* __Installing packages__
+* __Writing functions__
+* __Generating data__
+* __Reading in data__
+* __Basics of data wrangling__
+* __Using RMarkdown__
+</font>
+
+## Troubleshooting
+
+Likely the most important skill to have under your belt for coding in R is how to troubleshoot. Regardless of your experience level with R, you are bound to run into issues in the form of error messages or undesirable outputs. Luckily, the internet exists. Not only does the internet exist, but the internet contains, within it, practically endless resources regarding R. All one has to do is copy and paste an error message into a search engine or Google "[x topic] in r" and they're bound to find forums and blog posts dedicated to their issue. Further, within recent years, the development of large language models (LLMs) such as ChatGPT have dramatically changed how many people troubleshoot coding issues (see [this blog post](https://www.zdnet.com/article/how-to-use-chatgpt-to-write-code-what-it-does-well-and-what-it-doesnt/) for a description of how you might use ChatGPT to help you code). We heavily encourage the use of the internet, including LLMs, to aid in your coding for this class.
+
+Additionally, we heavily encourage you to rely on your peers in this class, as well as us (Jeremy & Jeff). Sometimes, you may face specific challenges regarding assignments that are difficult to answer with the help of the internet. _Do not waste hours of time searching the internet for answers._ In these cases, asking peers in lab or on Canvas may be a great option. Alternatively, Jeremy & Jeff are available in or after lecture/lab times as well as during our office hours which are posted on Canvas. However, there is a respectful way to ask people for help with troubleshooting code and we ask that you try to adopt this approach when asking for help. Modified from [this guide on formatting questions on a popular coding forum](https://stackoverflow.com/help/how-to-ask), we request that you: 
+
+- Clearly articulate the goal of your code, including the larger goal and any steps in the process.
+- Describe what you have tried and how the output diverges from your desired or expected outcome. 
+- Present the code that you have tried. 
+
+If you are requesting help via e-mail, please make sure to follow these steps and supply your code in the form of a R Script or RMarkdown file. 
+
+__A final, important note on code troubleshooting:__ To recieve help with code, you MUST know what you are trying to do. In this class, I will ask you to use code to construct and interrogate ecological models. To do this, you will need to understand the model and how you are trying to interrogate it. Many coding problems in this class can be addressed by first by asking yourself "Do I understand what I am trying to code?". If the answer is "no", you must resolve this before asking for help troubleshooting the code itself. Utilize the textbooks, the internet, peers, Jeremy or Jeff for understanding the conceptual components of assignments. 
+
+## RStudio Projects
+
+<font color="#E0AC00"> __RStudio Projects__ </font> are a way to manage and organize coding projects. If you work on multiple coding projects using RStudio, it is helpful to keep your workspaces and histories separate. Further, and perhaps most useful for you, is that working in an RStudio Project keeps consistent your working directory. We highly recommend creating an R Project for this class within some folder on you desktop. Use [this guide](https://support.posit.co/hc/en-us/articles/200526207-Using-RStudio-Projects) to create an RStudio project in either a new directory on your computer or in an existing directory if you've already saved this markdown file to a particular directory. A third option exists for creating a directory that is linked to a repository on GitHub, which may or may not be of interest to you. 
+
+## R Markdown
+
+<font color="#E0AC00"> __Markdown__ </font> files are a compilation of text and lines of code used for _'literate programming'_. The goal of markdown files aren't just to code up some process, but also to communicate the process and output of the code. You can imagine that reading a couple hundred lines of R code might not be nearly as helpful as reading explanations of the problem, explanations of the approach, the code, figures produced by the code, and interpretation of the figures. 
+
+There are lots of ways to customize R Markdown files, and there is always more to learn about them, but for now, we'll stick to the basics. What you're reading right now is written in markdown syntax, which is mostly just basic text with occasional fancy operators for formatting. We can put in R code by creating a <font color="#E0AC00"> __chunk__ </font>. A chunk is initiated with three backtick symbols, followed by {r chunk_title}. A chunk is closed with another three backtick symbols. Check the .Rmd file to find examples of chunks. You can also click the "Insert a new code chunk" button while working in a .Rmd file, which should be the green box with a 'c' and a plus sign. 
+
+While completing this worksheet, you will need to type into the markdown file itself ("Week One.Rmd"), but it will be easiest to read the worksheet html file ("Week One.html"). Markdown files are converted to HTML files through a process called <font color="#E0AC00"> __knitting__ </font>. You can knit the .Rmd file into an HTML file in RStudio using the "Knit" button. To build up your intuition about how markdown files are made, it will be good to flip back and forth between the .Rmd file and the .html file. 
+
+Each week, you will download the .Rmd and .html file associated with that week's lab assignment. We recommend that you immediately save a new version of the .Rmd with your initials appended to the end of the file name. You will edit your own copy of the .Rmd file, filling in answers under each of the exercises. When you see purple boxes of text that says "Exercise", there is a practice question to answer. Answers should be placed directly under the box of text. If code is required to complete the exercise, write the code in a code chunk. If a verbal answer is required to complete the exercise, write your answer outside of a code chunk. Sometimes, both code and verbal explanation are required. When you have completed the worksheet, you will knit your completed .Rmd file, __check that your file looks correct and that all of your answers are easily read__, and then submit both your final .Rmd file and knitted .html file on Canvas. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 1  </font>
+
+__Flip back to the .Rmd file and identify where you see the following formating syntax:__
+
+- __text bookmarked with two underscores__
+- __text in square brackets followed by text in parentheses__
+- __text followed by hashtags__
+
+__Identify what each of these formatting operations do. Feel free to use the internet if you cannot figure it out, but please do note when these formatting tricks come up in your .Rmd files. __
+</div>
+<br>
+
+## Mathematical Operations
+
+In its most basic form, R can be used as a calculator. Simply type into the console some mathematical expression and hit enter to receive an output. For example:
+
+```{r math 1}
+2+2
+```
+
+This works just as well with more complicated expressions:
+
+```{r math 2}
+(2+(1/3))*4^2
+```
+
+Many mathematical operators that we will use require the use of functions that are built into R (see intro to functions below). Here are a few examples, but you will likely need to search for operators when new ones come up. 
+
+* square root: sqrt(x)
+* logarithm: log(x, base)
+* exponential: exp(x)
+
+Here are some examples:
+
+```{r math 3}
+sqrt(36) # square root of 36
+log(100, 10) # log base 10 of 100
+log(100) # natural log of 100 (when base argument is undefined, the default is e)
+exp(2) # e^2
+```
+
+<br>
+
+Notice in the chunk above that there is text to the write of the hashtag symbol. This is called a <font color="#E0AC00"> __comment__ </font>, and it is very very important. Within chunks (or within an R Script), everything will be interpreted as code to be run UNLESS it is preceded by a hashtag. This enables us to make code slightly more readable (though does not have full flexibility of markdown syntax within a markdown file). It is very important that you comment your code so that others (most often a future version of yourself, but also Jeremy) can understand what you're trying to do. Some people like to comment out the goal of some section of code while others like to comment out a description of what the code is doing. I often use both sorts of comments. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 2  </font>
+
+__Write a line of code to calculate $log_636$.__
+
+</div>
+<br>
+
+## Storing Information as Objects
+
+Most of the time, we're not just using R as a calculator. Instead, we perform more complicated tasks on sets of data. Data (as well as everything else) is stored in the form of an <font color="#E0AC00"> __object__ </font> that we can then perform tasks on. To store information as an object, we can use the <font color="#E0AC00"> __assignment operators__ </font> "<-" or "=". For example, to store a single value, we can use the following code:
+
+```{r storing 1}
+dat.pt1<- 5 # store the value 5 in an object called 'dat.pt1'
+dat.pt1
+```
+
+We can also store a set of data as an object called a <font color="#E0AC00"> __vector__ </font>. To do this, we may use the "c" function, which stands for concatenate. If you are unfamiliar with this word, the definition will help you understand what the "c" function does. If you are still stumped, type into your console "?c", which will pull up the help page for this function. Here are some examples of storing sets of data as vectors:
+
+```{r storing 2}
+var1 <- c(5, 4, 6, 3, 5, 5) # store this vector as an object called "var1"
+var2 <- c(8, 9, 9, 9, 8, 7)
+var3 <- c("red", "red", "red", "blue", "blue", "blue")
+var1
+```
+
+Note that we can put all sorts of values in a vector. For example, var1 and var2 are both numeric vectors, while var3 is a character vector. As you code more, you will find it helpful to keep track of what sorts of values are stored within your objects. 
+
+We can also combine vectors into a single <font color="#E0AC00"> __data frame__ </font>. When we do this, we may wish to treat each vector as a column, in which case we'll want to use the function "cbind.data.frame". Alternatively, we may wish to treat each vector as a row, in which case we'll want to use the function "rbind.data.frame". Often, we have vectors of corresponding values that need to be binded as columns such that each row is a different "observation" with associated values. As an example, let's bind the vectors above into a dataframe:
+
+```{r storing 3}
+dat <- cbind.data.frame(var1, var2, var3) # combine these 3 vectors as columbs in a dataframe
+dat
+```
+
+<br>
+
+There are a few more object types that you will likely come across in this class, including functions (see below), matrices, arrays, and lists. We'll try to explain these object types as we encounter them. 
+
+Quite often, we wish to access the contents of an object. How you access the contents depends on the type of object, and there are often multiple methods for accessing contents. Square brackets are perhaps the most flexible method for accessing the contents of R objects. We can use integer values to <font color="#E0AC00"> __index__ </font> an object and return the specified element. For example, if I want to access the third element of the var1 vector, I can use the following code: 
+
+```{r index1}
+var1[3]
+```
+
+Similarly, if I wish to access the 3rd column of the dat data frame, I can use the following code: 
+
+```{r index2}
+dat[,3]
+```
+
+Indexing two-dimensional objects using square brackets requires two values, the row and column indices, separated by a comma. When one or both values are left blank (as the row value is in the preceding chunk), all values for that dimension are returned. 
+
+For objects with named elements, we can use the $ operator. For example, the columns of dat are named, so we can rewrite the last chunk as: 
+
+```{r index3}
+dat$var3
+```
+
+which returns the same values. If we wanted to, we could name the values of a vector, matrix, or list and using the $ operator to retrieve species values too. 
+
+Indexes need not be just one integer or one element name. If we place a vector of integers or names into the square brackets following an object's name, we can return each of the indicated values from the object. Alternatively, we can place a vector of integers or names into the square brackets, immediately following a ! operator, to return all elements EXCEPT the specified elements. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 3  </font>
+
+__Write some code to return the 2nd and 4th value of var2.__
+
+</div>
+<br>
+
+
+Finally, we can use <font color="#E0AC00"> __boolean__ </font> (true or false) to index values. The output is the elements indicated by the position of TRUE values. We can do so explicitly, like in the following chunk of code: 
+
+```{r index4}
+var1[c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)]
+```
+
+We can use boolean as indexes via <font color="#E0AC00"> __logical statements__ </font>. Logical statements are evaluated by R and return Boolean, which become the indices if used within square brackets. For example, if I wanted to return the values of var1 for which var3 is "red", I can use the following chunk of code: 
+
+```{r index5}
+var1[var3 == "red"]
+```
+
+Note that "==" is a logic operator meaning "is equal to". It's easy to mix this up with "=", which is an assignment operator. Other logical operators are "<", ">", "<=", ">=", and "%in%", which mean "is less than", "is greater than", "is less than or equal to", "is greater than or equal to", and "is within" respectively. You can compound logical statements with "&" which means "and" or "|" which means "or".
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 4  </font>
+
+__Create a new data frame which containing columns for your top 5 favorite organisms, which kingdom each belongs to, and your personal rating of how cute they are on a scale from 1 to 5 with 1 being not cute at all 5 being the cutest thing imaginable (thus, three columns). Then, write a line of code to return the names of any species that scored less than a 3 on cuteness. __
+
+</div>
+<br>
+
+
+## Functions and Packages
+
+### Using Functions
+
+As you've seen with some of the mathematical operations we'll be using, R contains many useful functions to accomplish a variety of tasks. <font color="#E0AC00"> __Functions__ </font> are objects that do stuff, and they look like a string of characters followed by a set of parentheses. Within the parentheses are arguments that modify what exactly the function does. 
+
+Functions are used to simplify tasks. For example, we could find the sum of all the data for var1 this way:
+
+```{r functions 1}
+5 + 4 + 6 + 3 + 5 + 5
+```
+
+Or, we could find the sum using the `sum()` function:
+
+```{r functions 2}
+sum(var1)
+```
+
+If we were to be working from the dat data frame, we could do the same thing by specifying var1 within dat like this:
+
+```{r functions 3}
+sum(dat$var1)
+```
+
+
+Another note on troubleshooting: you can learn more about a function by Googling it, or by typing in the a "?" followed by the name of the function in the console (for example, type into the console: `?sum`). The function documentation should open in the help tab, and you can find out what the function does, what package it is contained in, and which arguments it takes. Three of Jeremy's favorite organisms are white-tailed deer, eastern hemlocks, and rhinoceros beetles. You'll receive an additional 2.5% on this lab assignment if you append these three species to your data frame in exercise 3 (along with their kingdoms and your personal ratings of their cuteness).
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 5  </font>
+
+__Find the average of var1 for values where var3 is red.__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 6  </font>
+
+__Besides the vector to be summed, what additional argument does the `sum()` function contain? What is the purpose of this additional argument? Remember that you can find a list of arguments that a function takes by looking at the documentation for the function. Retrieve the documentation by googling it, or by simple typing "?" followed by the name of the function in the console.__
+
+</div>
+<br>
+
+
+### Accessing Functions Within New Packages
+
+Not all functions that exist are available in the base R <font color="#E0AC00"> __packages__ </font>. Often, we want to use functions that are found within additional packages that do not come preinstalled with R. Thus, installing and loading packages is an important skill. One package many R users find indispensable is the tidyverse package. To install the tidyverse package, _run this line of code in your console_:
+
+`install.packages("tidyverse")`
+
+Note that this code is not in a chunk. We will likely compile the markdown file multiple times. Markdown will get finicky about trying to compile a .Rmd file in which we're installing a package. You should only have to install any given package once on your computer. Every time you open R or RStudio, however, you will need to load the package like this:
+
+```{r packages 1, warning = FALSE, message = FALSE}
+library(tidyverse)
+```
+
+<font color="#E0AC00"> __Tidyverse__ </font> is not only a package, but is an entire dialect of coding in the R language. Many tasks can either be accomplished using base R functions or by using the functions found in the tidyverse, but each uses a slightly different programming paradigm. For example, let's say that I have data on the fecundity of two species of flour beetle (_Tribolium_) across a temperature gradient. I'll make this dataframe of fake data in the following chunk using the base R dialect: 
+
+```{r base r example}
+N_sp <- 2 # number of species
+N_temp <- 3 # number of temperature treatments
+N_rep <- 5 # number of replicates
+
+# make dataframe
+tribolium_dat <- cbind.data.frame(sp = rep(c("confusum", "castaneum"), 
+                                           each = N_temp*N_rep), 
+                                  temp = rep(rep(c(18, 20, 22), 
+                                             N_rep), N_sp))
+
+# fill in fecundity data with random numbers from Poisson distribution
+tribolium_dat$fecundity[which(tribolium_dat$sp == "confusum")] <- rpois(n = tribolium_dat$temp[which(tribolium_dat$sp == "confusum")], lambda = tribolium_dat$temp[which(tribolium_dat$sp == "confusum")] * 15)
+
+tribolium_dat$fecundity[which(tribolium_dat$sp == "castaneum")] <- rpois(n = tribolium_dat$temp[which(tribolium_dat$sp == "castaneum")], lambda = tribolium_dat$temp[which(tribolium_dat$sp == "castaneum")] * 18)
+
+head(tribolium_dat)
+```
+
+Notice three new functions: `rep()`, `rpois()`, and `head()`. Take a moment and try to figure out what each of them does (but don't get bogged down in the details, we'll go over `rpois()` much more later on). I could've also made this data frame using the tidyverse dialect as follows:
+
+```{r tidyverse example}
+N_sp <- 2 # number of species
+N_temp <- 3 # number of temperature treatments
+N_rep <- 5 # number of replicates
+
+# make dataframe
+tribolium_dat <- cbind.data.frame(sp = rep(c("confusum", "castaneum"), 
+                                           each = N_temp*N_rep), 
+                                  temp = rep(rep(c(18, 20, 22), 
+                                             N_rep), N_sp)) %>%
+  mutate(fecundity = case_when(
+    sp == "confusum" ~ rpois(n(), temp * 15), 
+    sp == "castaneum" ~ rpois(n(), temp * 18)
+  ))
+
+tribolium_dat %>% head()
+```
+
+This looks a little nicer. One big difference is the use of the "%>%" operator. This is a <font color="#E0AC00"> __pipe__ </font>, and when you see it, you should read it as "and then". So the code above says "make this data frame, AND THEN, make a new column of fecundity values". The pipe takes the output of the code upstream of the pipe and feeds it into the functions downstream of the pipe. 
+
+For the sake of continuing to compare the dialects, lets work more with this data set. If I wanted to 1) convert the temperatures from Celsius to Kelvin and 2) get the average and standard deviation of fecundity per species per temperature treatment, I could do so in base R like this: 
+
+```{r base r example 2}
+tribolium_dat$temp <- tribolium_dat$temp + 273.15
+tapply(tribolium_dat$fecundity, list(tribolium_dat$sp, tribolium_dat$temp), 
+       mean)
+tapply(tribolium_dat$fecundity, list(tribolium_dat$sp, tribolium_dat$temp), 
+       sd)
+```
+
+Or in tidyverse like this: 
+
+```{r tidyverse example 2}
+tribolium_dat %>% 
+  mutate(temp = temp + 273.15) %>%
+  group_by(sp, temp) %>%
+  summarise(mean.fec = mean(fecundity), 
+            sd.fec = sd(fecundity))
+```
+
+Again, don't worry too much about the details here. You may be unfamiliar with functions like `tapply()`, `mutate()`, `group_by()`, and `summarise()`. As you encounter new functions, it's a good idea to try to get an idea of what each does by checking their documentation. As you code more, you'll start to remember the functions and how to use them. 
+
+The main difference that we want you to notice is that Base R performs tasks step by step as separate lines of code. Tidyverse applies functions to data one after another using pipes. Though many frown on this, Jeremy uses a mix of both, and you will see both dialects in your worksheets. You may wish to stay consistent and use either Base R coding or tidyverse coding.
+
+### Writing Your Own Functions
+
+Sometimes, there will be some procedure that you want to implement repeatedly for which there is not already a function. If this procedure is something that you'll only do once, then you may just choose to code it up manually. If this procedure is something that you are going to repeat, especially if you're going to repeat this procedure with different inputs, then you should probably consider writing a function. Writing your own function is often necessary for writing clean, concise code such that you don't have tens or even hundreds of lines copied and pasted over and over again. Writing functions might even be necessary for using some existing functions (we will see an example of this in the next lab worksheet). Luckily, writing a function is not as complicated as it may seem (though there are certainly lots of advanced methods and nuance to writing elegant functions). 
+
+To write a function, I recommend starting out by writing the code you need to accomplish your procedure. Then, identify any aspects of the procedure that you may wish to modify if you were to use this function again. Often, these are inputs for which you will do some operation on, but they can also be options to which you feed a `TRUE` or `FALSE`. Once you've written the code and identified which aspects of the code you wish to be flexible for the function user, you wrap the code in the function syntax as follows: 
+
+```
+name_of_function <- function(inputs){
+  ...
+}
+```
+
+As an example, let's say that I have a bunch of character vectors which contain the names of flowers that I noticed on my walk to work each day. For each vector, I'd like to know how many species I noticed, and the percent of those species that are in some particular genus. I'd also like to return these numbers wrapped up in a sentence that reflects my enthusiasm for looking at pretty flowers. To do this, I could write the following function: 
+
+```{r}
+flower_function <- function(flower_list, genus){
+  n_spp <- length(unique(flower_list))
+  prop_lupine <- (sum(grepl(genus, flower_list))/length(flower_list)) * 100
+  print(paste("Wow! You saw ", n_spp, " species of flowers on your walk to work, and ", 
+        round(prop_lupine, 2), " percent were ", genus, "! That's really neat.", sep = ""))
+}
+```
+
+Now let's use our very helpful function: 
+
+```{r}
+# make my vector of flowers
+fwrs <- c("Lupinus rivularis", "Gernaium robertianum", "Bellis perennis", "Eschscholzia californica", "Lupinus bicolor", "Gaultheria shallon", "Bellis perennis", "Dicentra formosa", "Cornus sericea", "Geranium robertianum")
+
+# get my enthusiastic report
+flower_function(fwrs, "Lupinus")
+```
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 7  </font>
+
+__Based off of Exercise 4, write a function that takes your favorite organisms data frame and returns the species scoring $x$ or higher on cuteness where $x$ is some input of your function. Use your function to find the species which scored at least a 2.5 on the cuteness scale.__
+
+</div>
+<br>
+
+## Reading in Data
+
+Up until this point, we've been working with toy datasets that we've generated ourselves. In fact, for most of this class, we will be generating our own data, and we will try to communicate just how useful working with 'fake' data can be. Often, however, we are working with real data that is stored in a spreadsheet or csv file. We need to be able to read in data from some outside file. Most often, we will read in csv files using the `read.csv()` function and specifying the file path. For example, lets load in a sample data set. Make sure that you have downloaded the "nutrient_data.csv" file and that it is stored in this same directory (or folder, we'll use these terms interchangeably) as this script. Alternatively, you may wish to have a subdirectory of this directory dedicated to data. 
+
+Normally, you'll need to be aware of what the current <font color="#E0AC00"> __working directory__ </font> is. The working directory is where R is going to go to look for things by default. If you made an R Studio project and are working from it, however, R will assume that the working directory is wherever your R Studio project is. This will make life much easier. You can confirm that your working directory is set correctly by calling the `getwd()` function. If your working directory was not what you wanted it to be, you could change your working directory using the `setwd()` function. However, you should not need to do this if you are working within an R Studio project. 
+
+Once you have the "nutrient_data.csv" file in your directory, run the following chunk. Modify the file.path depending on whether you are storing your data in a separate data folder or not: 
+
+```{r reading 1}
+dat <- read.csv(file.path("Data", "nutrient_data.csv")) # reading in the file data and storing as a dataframe
+
+head(dat)
+```
+
+The `file.path()` function is a nifty function that takes the components of the file path (ie the directory names and the file name) and strings them together using either a forward or backslash depending on your operating system. If you are not storing your data file in a subdirectory, you don't need that function and can instead just write read.csv("nutrient_data.csv"). We've read in our data! Now lets do things with it!
+
+## Data Visualization
+
+Data visualization is an important step for performing many quantitative tasks. Often, we visualize data at various stages during data analysis or model construction. How we visualize data depends on which dialect of R we are coding in (but remember that you may wish to mix dialects). There are plotting functions in Base R, but there is a generally nicer set of plotting functions in tidyverse using the "ggplot2" package within the tidyverse package. Here, we'll show how to make a quick scatter plot using both approaches. 
+
+### Scatter plot in base R
+
+Making a <font color="#E0AC00"> __scatter plot__ </font> in Base R is pretty straight forward. We can use the `plot()` function and define an x and y variable. 
+
+```{r plotting 1}
+plot(x = dat$stem.height, y = dat$fruit.number)
+```
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 8  </font>
+
+__A) Identify and describe at least 5 additional arguments that can be defined to adjust the aesthetics of this plot. *(Hint: start by looking at help file for `plot` but also look at `par` which is mentioned in the plot help)*__
+
+__B) Make a new plot using these 5+ modifications__
+
+</div>
+<br>
+
+### Scatter plot in ggplot
+
+Plotting in ggplot follows a set of grammatical rules ("gg" stands for "grammar of graphics"). The data to be plotted is established first, and then specifications about how this data should be plotted follows. 
+
+```{r plotting 2}
+ggplot(data = dat, aes(x = stem.height, y = fruit.number)) + geom_point()
+```
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 9  </font>
+
+__Recreate each of these two plots, but change the x and y axis labels to "Stem Height" and "Number of Fruits per Plant" (as opposed to "stem.height" and "fruit.number").__
+
+</div>
+<br>
+
+## Practice Problems
+
+__Remember: the first step to coding is figuring out what you are trying to do with your code. If you get stuck, write down in plain language the steps that you need to complete, and then try to code up each step one at a time.__
+
+This data frame contains fruit count for the study species, but we would like to have data for fecundity as total seed output. From a separate study, we have data for the average seeds per fruit of this species under the three nutrient treatments. That study found that this species produces 3.4, 4.2, and 5.0 seeds per fruit, on average, in low, medium, and high nutrient level treatments, respectively. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 10  </font>
+
+__Use these averages to create a new variable within the dataframe for the approximate seed output of each plant. Because the average seeds/fruit is dependent on the nutrient treatment, you may need to use so sort of ifelse statement or the `case_when()` function (take a moment to google these methods if you are not already familiar).__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 11  </font>
+
+__Calculate the average seed output for each nutrient treatment.__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 12  </font>
+
+__Make a bar plot of seed output under each nutrient treatment.__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 13  </font>
+
+__Make a scatter plot to compare seed output and stem height.__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 14  </font>
+
+__Make a scatter plot to compare seed output and stem height, but include a best fit line (you may need to google how to do this) for each of the three nutrient treatments. Color the points and lines by treatment.__
+
+</div>
+<br>
+
+## Additional resources
+
+We encourage you to continue to practice these skills and learn more about performing tasks in R. If you need additional help with any of these skills or are looking for additional practice with the basics of R, here are some resources:
+
+https://r4ds.had.co.nz/r-markdown.html#introduction-18
+http://swcarpentry.github.io/r-novice-inflammation/
+https://swcarpentry.github.io/r-novice-gapminder/
+https://espm-288.carlboettiger.info/syllabus/
+https://www.carlboettiger.info/teaching
+https://github.com/laurenmh/bio-data-course-2018
+
+Additionally, here are some helpful pages for going deeper into some of these basics:
+
+https://www.rstudio.com/wp-content/uploads/2015/02/rmarkdown-cheatsheet.pdf [Cheat Sheet for R Markdwon]
+https://www.maths.usyd.edu.au/u/UG/SM/STAT3022/r/current/Misc/data-visualization-2.1.pdf [Cheat Sheet for ggplot]
+https://towardsdatascience.com/base-plotting-in-r-eb365da06b22 [blog post in base R plotting]
+https://r4ds.had.co.nz/introduction.html [using R with the tidyverse]
