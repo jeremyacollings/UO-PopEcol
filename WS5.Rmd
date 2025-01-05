@@ -1,0 +1,388 @@
+---
+title: "Parameter Estimation and Species Coexistence"
+output:
+  html_document:
+    theme: "flatly"
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    # keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(6)
+library(tidyverse)
+library(patchwork)
+library(deSolve)
+```
+
+# Introduction
+
+Recall that there are three broad (and not mutually exclusive) categories of methods for interrogating our population models: Analytical Methods, Simulation-based Methods, and Statistical Methods. Many population ecology classes focus almost entirely on analytical and simulation-based methods without much reference to statistics at all. These classes tend to focus on _theoretical_ population ecology. Different classes that focus primarily on statistical methods are often marketed as _applied_ population ecology classes. We have covered various analytical methods thus far (e.g. stability analysis, eigenanalysis of the projection matrix, sensitivity analysis) and we have also covered various simulation based methods (e.g. simulating ODEs with ODE solvers, stochastic simulation methods, Monte Carlo simulation methods). Up until this point, however, we have just mentioned statistical methods in passing in these worksheets (though you have encountered these methods in reading the primary literature). This may seem a bit odd, as the majority of population ecology relies most heavily on statistical methods. Then why are we introducing these methods in the final worksheet? The primary reason for this is that statistical methods in population ecology are perhaps the most involved methods, requiring some familiarity with calculus, linear algebra, and probability theory as well as empirical methods in population ecology. Further, most biologists learn statistics in a very _procedural_ way, memorizing a large decision tree of statistical tests for the sake of hypothesis testing. While this approach does allow many ecologists to robustly answer many important questions without much knowledge of the underlying mathematics or code, it can be quite restrictive and error-prone. In this worksheet, we will try to cover the basics of statistical methods, not from a hypothesis testing framework, but instead from a parameter estimation framework, as to give you an idea of how population ecologists use statistical methods to make inference. 
+
+As an example, we will learn these methods by fitting _annual plant models_ to data. In the process, we will learn how to integrate statistical methods with simulation-based methods by conducting an invader-resident comparison with our fitted population models. This particular methodology is the foundation of what is called Modern Coexistence Theory, which has become a pillar of contemporary community ecology. We hope to use this analysis as an example of how theoretical models and methods can be integrated with empirical methods, putting tire to the pavement. 
+
+The goals of this week are to:
+
+- introduce a model for annual plant population dynamics
+- walk through the steps of parameter estimation
+- introduce the invader resident comparison as a test of species coexistence
+- gain further experience in stochastic simulation
+
+New Models: annual plant model
+New Tools: maximum likelihood parameter estimation; Bayesian parameter estimation; invader-resident comparison
+
+# Building up the model
+
+A simple model of annual plant growth is really just an adaptation of a discrete logistic growth model (by this point, you should be noticing a theme). It looks like:
+
+$$
+N_{t+1} = gN_tF
+$$
+
+where $N_{t+1}$ is the population size one time step into the future, $g$ is the proportion of seeds that germinate, $N_t$ is the current population size, and $F$ is the fecundity. Fecundity is the number of offspring produced, which for annual plants means number of seeds. The fecundity in this model is assumed to be density-dependent and is calculated as:
+
+$$
+F = \frac{\lambda}{1+\alpha N_tg}
+$$
+
+Here, $\lambda$ is the growth rate without competition and $\alpha$ is intraspecific competition. Thus, as population size increases (larger $N_t$, per-capita fecundity (average invidual fecundity) will decrease. Two common mechanisms causing this density-dependence are resource competition and/or some enemy species such as pathogens or herbivores (ie apparent intraspecific competition). 
+
+Because of the ability of annual plants to lie dormant in the soil as seeds, we often need to include this seedbank in the model. We can do this by adding a term for the carryover of surviving, dormant seeds from year to year. 
+
+$$
+N_{t+1} = s(1 - g)N_t + gN_tF
+$$
+
+A new parameter, $s$ describes the portion of ungerminated seeds ($(1-g)N_t$) that survive to the next year. The calculation for the fecundity remains the same.  Thus, there are now two ways that seeds this year ($N_t$) can become seeds next year: (i) by germinating and the resulting plant producing seeds; or (ii) by surviving in the seed bank.
+
+### <span style="color: #871FBF;">Exercise 1</span>
+
+Write a function to simulate and visualize the (deterministic) dynamics of a seed banking annual plant population model. Your function should take as arguments all parameters, the initial population size, and the number of timesteps to simulate across. Your function should return a plot of the population time series. Demonstrate the use of your function by producing a timeseries of some annual plant population with some set of reasonable parameter values. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 3</span>
+
+Modify the function you made in the previous example such that instead of producing a plot, it produces the average population size after some burn-in period. This function should thus include as an argument the length of the burn-in. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 3</span>
+
+Use the function you made in the previous example to compare the role of each of the parameters in determining the equilibrium abundance of the plant. To do this, perform a rudimentary sensitivity analysis by 1) calculating the equilibrium abundance at some baseline set of parameters and 2) sequentially increase each parameter by $10\%$, calculate the new equilibrium abundance, and find the relative shift in equilibrium abundance for each parameter's increase. Order the parameters from least to most influential on equilibrium population size. 
+
+*JC Note: give them a baseline parameterization
+
+<br>
+
+Plants seldom live in monocultures (populations of all the same species). Thus, we often want to add the effect of competitor species into population models. To do this, we will add a term that reduces fecundity not just by intraspecific competition, but also interspecific competition. We can also model the competitor's population dynamics. The overall model looks very similar:
+
+$$
+N_{i, t+1} = s_i(1 - g_i)N_{i,t} + g_iN_{i,t}F_i
+$$
+but now, $F_i$ is defined as:
+
+$$
+F_i = \frac{\lambda}{1+\alpha_{ii} N_{i,t}g_i+\alpha_{ij} N_{j,t}g_j}
+$$
+
+Here is a function that incorporates competition:
+
+```{r}
+annual_growth_comp <- function(N0s = c(1, 1), lambdas = c(50, 50), 
+                          alphas = matrix(c(1, 1, 1, 1), nrow = 2), 
+                          gs = c(1, 1), ss = c(1, 1), period = 100){
+  # Argument definitions:
+    # N0 = vector of starting population sizes (a, b)
+    # lambdas = vector of per capita growth rates in the absence of competition (a,b)
+    # alphas = matrix of strengths of competition
+    # g = vector of germination rates (between 0 - 1)
+  
+  t <- c() # create an empty vector to store timesteps in
+  Nat <- c() # create an empty vector to store pop sizes in
+  Nbt <- c()
+  feca <- c() # create an empty vector to store fecundities in
+  fecb <- c()
+  
+  Nat[1] <- N0s[1] # first item in pop size vector is starting pop size
+  Nbt[1] <- N0s[2]
+  t[1] <- 1 # first item in timestep vector is 1
+  feca[1] <- lambdas[1]/(1 + alphas[1,1]*N0s[1]*gs[1] + alphas[1,2]*N0s[2]*gs[2]) # calculating the fecundity at time 1
+  fecb[1] <- lambdas[2]/(1 + alphas[2,1]*N0s[1]*gs[1] + alphas[2,2]*N0s[2]*gs[2])
+  for(i in 2:period){
+    t[i] <- i # store each time step
+    feca[i] <- lambdas[1]/(1 + alphas[1,1]*Nat[i-1]*gs[1] + alphas[1,2]*Nbt[i-1]*gs[2]) # store each new fecundity
+    fecb[i] <- lambdas[2]/(1 + alphas[2,1]*Nat[i-1]*gs[1] + alphas[2,2]*Nbt[i-1]*gs[2])
+    Nat[i] <- ss[1]*(1 - gs[1])*Nat[i-1] + gs[1]*Nat[i-1]*feca[i] # store each pop size
+    Nbt[i] <- ss[2]*(1 - gs[2])*Nbt[i-1] + gs[2]*Nbt[i-1]*fecb[i]
+  }
+  dat <- cbind.data.frame(t, Nat, Nbt) # bind together time and pop size vectors
+  dat
+}
+
+```
+
+Here, the alphas argument is a 2x2 interaction matrix where the rows are the affected species and the columns are the affecting species. For example, the element at alphas[1,2] is the effect of species 2 on species 1. Knowing the relationships between these values allows us to make predictions about the outcome of pairwise competition. Here are some general rules:
+
+- When $\alpha_{ii} > \alpha_{ji}$ and $\alpha_{jj} > \alpha_{ij}$, species $i$ and $j$ are predicted to stably coexist
+
+- When $\alpha_{ii} < \alpha_{ji}$ and $\alpha_{jj} > \alpha_{ij}$, species $i$ is predicted to exclude species $j$
+
+- When $\alpha_{ii} < \alpha_{ji}$ and $\alpha_{jj} < \alpha_{ij}$, these species exhibit priority effects. Whichever species arrives in the community first will outcompete the other. 
+
+### <span style="color: #871FBF;">Exercise 4</span>
+
+Create a function that takes the output of the competition function I've given you and plots the simulation. You should have a line representing the population size for each species. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 5</span>
+
+Use your function to create a plot demonstrating stable coexistence between the two species. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 6</span>
+
+Use your function to create two plots: one for exclusion by species A and another for exclusion by species B. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 7</span>
+
+Use your function to create two plots, both of which represent priority effects: one in which species A excludes species B and one in which species B excludes species A. 
+
+<br>
+
+$$\\[.5in]$$
+
+# Basics of Parameter Estimation
+
+There are two main approaches to estimating the parameters of a model using data: Maximum Likelihood and Bayesian Parameter Estimation. There are many philosophical and pragmatic reasons to implement one or the other methods (see the box below to read more about why ecologists choose one or the other). For this worksheet, we will use maximum likelihood methods (primarily because commonly used Bayesian methods require extra software that can be a pain to download on some operating systems), so let's describe this process first. 
+
+Regardless of whether you are using max likelihood or Bayesian parameter estimation, the first step to parameter estimation is to define the data generating process. This is a mathematical model that describes what processes we believe are responsible for generating our data. The next step, which is also common to both max likelihood and Bayesian methods, is to define the likelihood of our data given our data generating process and some set of parameters. Ultimately, these likelihoods are equations (usually probability density/mass functions) which calculate the probability of our data given certain parameter values. In a max likelihood workflow, this is all we need to begin fitting our models. We then use some algorithm that tries to identify the values for our parameters which maximize the likelihood function. Conceptually, we are looking for the parameter values for which our exact data was most likely to have been generated. Most maximum likelihood methods result in a single estimate for each parameter (called a point estimate) as well as some measure of uncertainty. The measure of uncertainty is often a $95\%$ confidence interval, which defines the range of parameter values that we would expect our parameter estimates to fall into for $95\%$ of some set of hypothetical replicates of our experiment (yeah, it's confusing... sorry). By this point, we can make inference directly from our point estimates and confidence intervals, or we can use these values in subsequent analyses or simulations. 
+
+A Bayesian workflow similarly requires the definition of the data generating process and the likelihood function. Counter to max likelihood methods, we also need to define the prior probability distribution for each of our parameters. This distribution describes our belief in the parameter values _before_ we collected the data and ran the analysis. In a Bayesian analysis, we do not attempt to get some single parameter estimate, but instead seek to describe our posterior belief in the parameter values. To do this, we use Bayes Theorom, which states that the posterior probability of a parameter given our data (or set of parameters; $p(\theta | y)$) is the product of the likelihood of our data given our parameter(s) ($p(y|\theta)$) and the prior probability of our parameters ($p(\theta)$) divided by the probability of our data ($p(y)$). All together, that is: 
+
+$$
+p(\theta | y) = \frac{p(y|\theta)p(\theta)}{p(y)}
+$$
+where $\theta$ is some parameter or set of parameters and $y$ is our data. We typically ignore the denominator as it isn't too useful for actually calculating our posterior probability distribution. Once we have defined our likelihood and priors, we use some algorithm to characterize our posterior probability distribution. Usually, this algorithm involves trying out a bunch of values of $\theta$ in a strategic way as to figure out the shape of $p(\theta|y)$ in parameter space. Thus, instead of a single point value and confidence interval, we get a whole distribution (or technically a bunch of samples from a whole distribution) for each of our parameters. We can then describe this distribution in terms of it's central tendency (ie what value of the parameter is most probable) or it's variability. Often, we compute $95\%$ credible intervals as the interval in which $\95%$ of the probability density is located, meaning that there is a $95\%$ chance that the parameter is contained within that interval (yes, this is much more straightforward than $\95%$ confidence intervals). We can similarly use these posterior probability distributions to make inference about our questions, or we can use them for subsequent analyses or simulations. 
+
+<font color="#5DBA49"> __We do not expect all of these details to sink in immediately. These descriptions contain many abstract ideas that may be new to you, and most people require more concrete walk-throughs to understand these ideas. It will suffice if you understand the general goal of parameter estimation and a bit about how maximum likelihood methods differ from Bayesian parameter estimation.__ </font>
+
+
+
+
+Our model for an $S$ species annual plant community dynamics has quite a few parameters: $S$ $\lambda$ parameters, $S$ $g$ parameters, $S$ $s$ parameters, and $S^2$ $\alpha$ parameters. To fit this model, we need to estimate the value of each of these parameters using data. Here, we will use some data from an experiment conducted with three annual plants of the Willamette Valley. See the box below for a description of how this data was collected. 
+
+## Defining Our Model
+
+The first step to parameter estimation is to define what we believe is the data generating process in terms of a mathematical model. Our definition of the data generating process is very important. It should contain the key details that we need to answer our question, and it should control for any confounding variables that might complicate our inference. It also shouldn't be too complicated, or we run the risk of an overparameterized model that we lack sufficient statistical power to fit. We have defined a deterministic model for annual plant community dynamics, but this misses a key feature of our data: stochasticity. So let's define our full, stochastic community dynamics. 
+
+The data generating process that produced our germination data can be defined in terms of our germination parameter $g$ with a relatively simple model. Every seed that we sewed will either germinate or not with a species-specific germination probability $g_i$ where $i$ refers to the species. Recall that we can define a binary random variable using the binomial distribuition, so let's say that our germination data, $y_g$ is binomially distributed such that: 
+
+$$
+y_g \sim Binomial(g_i, 3)
+$$
+The $3$ represents the number of trials for our Binomial distribution, which in this case is the $3$ seeds that we sewed into each pocket. 
+
+We can similarly define the data generating process for seed survival as such: Every seed that we buried either survived or died with a species-specific survival probability. Again, we can use the binomial distribution: 
+
+$$
+y_s \sim Binomial(s_i, 1)
+$$
+where $y_s$ is the survival status of each seed at the end of the seed survival experiment. We use the trial number $1$ because our survival data is at the seed level. 
+
+Our fecundity data is going to be used to estimate both our intrinsic growth rate $\lambda$ as well as our interaction coefficients $\alpha$. Recall that $\frac{\lambda}{1+ \sum_{j=1}^S \alpha_{ij} N_{j,t}g_j}$ describes the fecundity of the average individual given a particular density of competitors, $N_{j,t}g_j$. Thus, this equation can be used to calculate the _expected value_, which might be used to define some probability distribution. Because our data are counts of seeds, we can use this expected fecundity term as the rate parameter of the Poisson distribution, which happens to be the mean of the Poisson distributed variable. Thus, our fecundity model is: 
+
+$$
+y_f \sim Poission(\frac{\lambda}{1+ \sum_{j=1}^S \alpha_{ij} N_j})
+$$
+where $N_j$ is the number of competitor plants of species $j$ in the pot with the focal plant.
+
+Luckily, each of our data generating processes can be defined using probability distributions that do not add additional parameters. This is not always the case, and we sometimes have to use probability distributions with additional parameters. For example, ecological count data often has a higher variance than expected based on the Poisson distribution. Ecologists may choose to model such data instead with a negative binomial distribution, which can be parameterized with the expected value and an additional parameter that describes how much more or less variable the count is than expected from the Poisson distribution. Sometimes, these additional parameters required to estimate the full stochastic model are referred to as _nuissance parameters_, but this is a bit misleading as these parameters contain really important information about the ecological process and may even be of central importance to some questions. 
+
+
+
+
+
+
+# Invader-resident comparison
+
+Another way that we can assess the possibility of long-term stable coexistence is through a process called the invader-resident comparison. The final product of an invader-resident comparison is the Growth Rate When Rare (GRWR) for each species. The idea behind a GRWR is that if a species has a positive GRWR, it should be able to bounce back when pushed to very small population sizes. If two competing species both have positive GRWR, they should be able to coexist as neither species can push the other species into exclusion. These GRWR's can be calculated in fluctuating environments or with stochastic models of population growth. In recent literature, they have been decomposed into terms that represent the contribution of environmental or biological fluctuations to species coexistence. 
+
+The invader-resident comparison begins with designating one species a "resident" species and finding its equilbrium population size in the absence of the other species (deemed the "invader"). We then introduce the "invader" into the community at a low density and calculate its growth rate. Often, we assume that intraspecific competition of the invader is negligible. Averaging across some time period gets us a mean GRWR. 
+
+Use the following parameterization for exercises 8-12:
+
+- $\lambda_A = 100$
+- $\lambda_B = 130$
+- $\alpha_{AA} = 5$
+- $\alpha_{BA} = 4$
+- $\alpha_{BB} = 5.5$
+- $\alpha_{AB} = 3.75$
+- $g_A = 1$
+- $g_B = 1$
+- $s_A = 1$
+- $s_B = 1$
+
+### <span style="color: #871FBF;">Exercise 8</span>
+Let's begin by setting species A as the resident species and species B as the invader. Find the equilibrium population size of the resident species in the absence of interspecific competition using the annual_growth_comp function. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 9</span>
+Now consider species B the resident and species A the invader. Find the equilibrium population size of the resident species in the absence of interspecific competition. 
+
+<br>
+
+$$\\[.5in]$$
+
+The next step in our invasion analysis will be to use these equilibrium resident population sizes to compute the growth rate at each time step of an invader. To do this, we can assume that the invader's population size is always equal to one and intraspecific competition of invader is negligible. Here is a function to calculate these growth rates. 
+
+```{r}
+GRWR <- function(res = 50, 
+                 lambda_res = 50,
+                 lambda_inv = 50,
+                 alpha_res_res = 1,
+                 alpha_res_inv = 1, 
+                 alpha_inv_res = 1,
+                 g_res = 1,
+                 g_inv = 1,
+                 s_res = 1,
+                 s_inv = 1,
+                 period = 100){
+
+  t <- c() # create an empty vector to store timesteps in
+  Nres <- c() # create an empty vector to store pop sizes in
+  Ninv <- rep(1, period)
+  Fres <- c() # create an empty vector to store fecundities in
+  Finv <- c()
+  grwr <- c(0)
+  
+  Nres[1] <- res
+  t[1] <- 1 # first item in timestep vector is 1
+  Fres[1] <- lambda_res/(1 + alpha_res_res*Nres[1]*g_res + alpha_res_inv*Ninv[1]*g_inv)
+  Finv[1] <- lambda_inv/(1 + alpha_inv_res*Nres[1]*g_res)
+  grwr <- Finv[1]*g_inv*Ninv[1]
+  for(i in 2:period){
+    t[i] <- i # store each time step
+    Fres[i] <- lambda_res/(1 + alpha_res_res*Nres[i-1]*g_res + alpha_res_inv*Ninv[i-1]*g_inv)
+    Finv[i] <- lambda_inv/(1 + alpha_inv_res*Nres[i-1]*g_res)
+    Nres[i] <- s_res*(1 - g_res)*Nres[i-1] + g_res*Nres[i-1]*Fres[i]
+    grwr[i] <- s_inv*(1 - g_inv)*Ninv[i-1] + Finv[i]*g_inv*Ninv[i-1]
+  }
+  grwr
+}
+```
+
+We might define the mean GRWR as the mean of this vector. 
+
+### <span style="color: #871FBF;">Exercise 10</span>
+Find the mean GRWR for species A. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 11</span>
+Find the mean GRWR for species B.
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 12</span>
+Based on these two GRWR, make a prediction for the outcome of competition between species A and species B. 
+
+<br>
+
+$$\\[.5in]$$
+
+# Assessing the Effect of Stochasticity
+
+We may wish to incorporate the effects of stochasticity into our simulations. For example, perhaps the exact proportion of seeds that germinate on any given year is random. We might account for this by pulling a random germination rate for each species each year from a beta distribution with a mean = 1. The following function allows us to input a vector of germination rates generated using 'rbeta' for each species. 
+
+```{r}
+stochastic_annual_growth <- function(gA, gB, N0s = c(1, 1), lambdas = c(50, 50), 
+                                     alphas = matrix(c(2, 1.1, 1, 2.1), nrow = 2),
+                                     ss = c(1, 1), period = 100){
+  # Argument definitions:
+  # N0 = vector of starting population sizes (a, b)
+  # lambdas = vector of per capita growth rates in the absence of competition (a,b)
+  # alphas = matrix of strengths of competition
+  # gA and gB = vectors of germination rates with length = period
+  # stoch = the degree of stochasticity such that the mean g = 1
+  
+  t <- c() # create an empty vector to store timesteps in
+  Nat <- c() # create an empty vector to store pop sizes in
+  Nbt <- c()
+  feca <- c() # create an empty vector to store fecundities in
+  fecb <- c()
+  
+  Nat[1] <- N0s[1] # first item in pop size vector is starting pop size
+  Nbt[1] <- N0s[2]
+  t[1] <- 1 # first item in timestep vector is 1
+  feca[1] <- lambdas[1]/(1 + alphas[1,1]*N0s[1]*gA[1] + alphas[1,2]*N0s[2]*gB[1]) # calculating the fecundity at time 1
+  fecb[1] <- lambdas[2]/(1 + alphas[2,1]*N0s[1]*gA[1] + alphas[2,2]*N0s[2]*gB[1])
+  for(i in 2:period){
+    t[i] <- i # store each time step
+    feca[i] <- lambdas[1]/(1 + alphas[1,1]*Nat[i-1]*gA[i] + alphas[1,2]*Nbt[i-1]*gB[i]) # store each new fecundity
+    fecb[i] <- lambdas[2]/(1 + alphas[2,1]*Nat[i-1]*gA[i] + alphas[2,2]*Nbt[i-1]*gB[i])
+    Nat[i] <- ss[1]*(1 - gA[i])*Nat[i-1] + gA[i]*Nat[i-1]*feca[i] # store each pop size
+    Nbt[i] <- ss[2]*(1 - gB[i])*Nbt[i-1] + gB[i]*Nbt[i-1]*fecb[i]
+  }
+  dat <- cbind.data.frame(t, Nat, Nbt, gA, gB) # bind together time and pop size vectors
+  dat
+}
+```
+
+Here is an example of how we might use this function:
+
+```{r}
+# beta = 1/alpha generates mean of 1
+# increasing alpha while keeping beta = 1/alpha keeps mean of 1 and decreases variance
+germA <- rbeta(100, 5, 1/5)
+germB <- rbeta(100, 5, 1/5)
+head(stochastic_annual_growth(germA, germB))
+```
+
+### <span style="color: #871FBF;">Exercise 13</span>
+
+Simulate the population growth of two competing plant species using this stochastic_annual_growth function in the following two circumstances:
+
+- Neutrality (ie $\alpha_{ii} = \alpha_{ij} = \alpha_{jj} = \alpha_{ji}$)
+- Coexistence (pick some reasonable $\alpha$ values)
+
+Repeat this process across a range of degrees of stochasticity (ie manipulate how wide the beta distribution that you're pulling from is). Comment on the role of stochasticity under neutral conditions v.s. under a parameterization that should permit coexistence. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 14</span>
+
+Provide an argument or example for both A) how stochasticity might increase the chances of coexistence between two species and B) how stochasticity might decrease the chances of coexistence between two species. 
+
+<br>
+
+$$\\[.5in]$$
+
+### <span style="color: #871FBF;">Exercise 15</span>
+Please clearly state _two_ ecological questions regarding competition that you could investigate. Describe, generally, an approach that you could take to answering each of these two questions. 
