@@ -7,3 +7,9 @@
  - Worksheet 4: Predator-Prey Models, Disease Dynamics, and More Stability
  - Worksheet 5: Annual Plant Competition and Parameter Estimation
  - Worksheet 6: Misc. Topics
+
+I have used many resources to guide the development of these course materials. Most notably: 
+- Hank Steven's [Primer of Ecology Using R](https://hankstevens.github.io/Primer-of-Ecology/index.html)
+- Sarah Otto and Troy Day's [A Biologist's Guide to Mathematical Modeling in Ecology and Evolution](https://www.zoology.ubc.ca/biomath/)
+- Stefano Allesina's [materials on Theoretical Community Ecology](https://stefanoallesina.github.io/Theoretical_Community_Ecology/)
+- 
