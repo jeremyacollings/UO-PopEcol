@@ -1,0 +1,732 @@
+---
+title: "Structured Population Models"
+output:
+  html_document:
+    theme: "flatly"
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    # keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(6)
+library(tidyverse)
+library(patchwork)
+```
+
+This markdown file uses the `patchwork` package to string together multiple plot. Please install this package by running `install.packages("patchwork")` in your console if you have not already. 
+
+# Introduction
+
+In previous weeks, we've employed some nifty population models, including the exponential growth model, the logistic growth model, and the generalized Lotka-Volterra model. Each of these models makes an assumption that within a population, all individuals are functionally equivalent. For some goals, this assumption may make perfect sense. For example, we often use such assumptions when modeling cells in petri dishes because individual variation between cells may be relatively small or that variation may not impede inference about some larger process, such as competition or environmental heterogeneity. For some organisms or for some research questions, however, individual variation within a population may be of interest. Alternatively, this individual variation may not be of principle interest, but it may be necessary to account for because it impacts the inference that we would like to make about some process.
+
+A common example of such individual variation is ontogenetic or developmental variation in populations with some age or size based structure. When generations overlap, such as in perennial organisms, adults may be _demographically distinct_ from juveniles such that their contribution to population growth varies. It may be intuitive then that such a population with an adult to juvenile ratio of 3:7 will behave quite differently than a population of the same species and size with an adult to juvenile ratio of 7:3. Today, we will work with <font color="#E0AC00"> __matrix population models (MPMs)__ </font> which are often used to account for such age or sized structured populations. 
+
+The goals of this weeks lab are the following:
+
+- Review some basic matrix operations
+- Practice translating lifecycle diagrams into MPMs and vice versa
+- Practice projecting MPMs
+- Introduce stochasticity, probability distributions, and Monte Carlo simulation methods
+- Explore how eigen analysis is used in population ecology and for analysing MPMs
+- Introduce sensitivity analysis
+
+New Models: matrix population models (MPMs)
+New Tools: MPM projections; stochastic simulations; Monte Carlo methods; eigen analysis of the projection matrix; local sensitivity analysis
+
+# A Refresher on Matrix Math
+
+Recall from lectures and the readings that population ecologists sometimes employ matrices to describe the population growth of structured populations. Before we get to exactly how this is done, it is worth reviewing a bit of matrix math. It may be helpful to review on your own matrix addition, subtraction and division, but here we will focus on reviewing matrix multiplication as this is the operation that we will use the most while simulating with MPMs. 
+
+Recall that matrix multiplication is only defined for matrices where the number of columns of the first matrix is equal to the number of rows of the second matrix. Thus, given a matrix $\textbf{A}$ with dimensions $m \times n$, $\textbf{A}\textbf{B}$ is only defined if $\textbf{B}$ has $n$ rows. The resulting matrix will have $m$ rows and the same number of columns as that of $\textbf{B}$. If $\textbf{C} = \textbf{A}\textbf{B}$, then we can calculate an element of $\textbf{C}$, $c_{ij}$ as:
+
+$$
+c_{ij} = \sum_{k=1}^{n}a_{ik}b_{kj}
+$$
+So in words, to get the element corresponding to the $i^{th}$ row and $j^{th}$ column of $\textbf{C}$, we sum up the corresponding $k^{th}$ values of the $i^{th}$ row vector of $\textbf{A}$ and the $j^th$ column vector of $\textbf{B}$ where $k$ is a value in $1:n$. Most often, we will use the R operator `%*%` to do matrix multiplication, but it is important that you understand how this operator works. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 1  </font>
+
+__Write some code that calculates the product of the two matrices below without using the operator `%*%` and then verify your answer by writing some code to calculate the product using the `%*%` operator. If you are still feeling shaky about how to multiply matrices, feel free to lookup examples online.__
+
+```{r}
+mat1 <- matrix(c(2, 3, 6, 8), nrow = 2, ncol = 2)
+mat2 <- matrix(c(3, 5), nrow = 2, ncol = 1)
+```
+
+</div>
+<br>
+
+# Introduction to Matrix Population Models
+
+Matrix Population Models (MPMs) are employed to describe the population growth of structured populations. These populations are often structured by age or discrete life stages. The underlying idea of these models is that distinct <font color="#E0AC00"> __vital rates__ </font> determine the transitions from one age/stage to another. For example, a survival probability may define the probability that any two year old individual will survive to age three, and that survival probability may be different than that for three year old individuals surviving to age four. For stage structured organisms, a transition probability from small to large individuals may involve the survival of the small individual as well as the probability that a small individual would grow to become a large individual. Thus, we collapse all of these vital rates into <font color="#E0AC00"> __transition rates__ </font>.
+
+As a conceptual link, it is worth considering how MPMs are simply an extension of the simple geometric population growth model we employed in the previous worksheet. If all the ages/stages are demographically identical (ie their demographic rates are all identical), or if the population only has one age/stage, then our MPM is the same as a simple geometric growth model. In fact, simple MPMs with no extra bells and whistles will behave similarly to non-structured geometric growth models (well, eventually... see below). 
+
+## The Projection Matrix
+
+Given a population with $n$ ages/stages, we can define a $n \times n$ symmetric matrix made up of all the possible transition rates which we will call the <font color="#E0AC00"> __projection matrix__ </font>. Let's review how we translate between a life cycle diagram and the projection matrix for a given population. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 2  </font>
+
+__Below is a life cycle diagram for Organism X. Write some code to construct the projection matrix for Organism X. We will use this projection matrix throughout this worksheet.__
+
+```{r echo = FALSE, message=FALSE, out.width = "800px", out.height= "400px"}
+knitr::include_graphics(file.path("Images", "OrganismX.png"))
+```
+
+_Note that to knit this document, you will need to have the `OrganismX.png` file some where. I put it in a subdirectory of my working directory called `Images`, so if you put it somewhere else, modify the chunk of code in the markdown file to correctly direct to the file location. This would be a great opportunity to check out how you can put images into a markdown file._
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 3  </font>
+
+__Using the lifecycle diagram for Organism X, identify the following values:__
+
+- __The probability of growth from Stage 2 to 3.__
+- __The probability of survival (and not growing) in Stage 3.__
+- __The fecundity of Stage 3.__
+- __The probability of mortality in Stage 3.__
+
+</div>
+<br>
+
+## Simulating from the Projection Matrix
+
+Recall that when we worked with discrete population models, we used loops to simulate the population growth of some population and to generate a time series of population sizes. Because many simple MPMs are just structured versions of geometric growth, we will use a similar approach to simulate the dynamics of our MPM. However, instead of multiplying the intrinsic growth rate ($\lambda$) by the population size at time $t$ ($N_t$) to get the new population size, we will multiply the population projection matrix $\textbf{A}$ by the vector representing the number of individuals of each age/stage ($\textbf{N}_t$). How does this get us the new age/stage distribution, $\textbf{N}_{t+1}$? Let's revisit our equation for conducting matrix multiplication with slightly different notation: 
+
+$$
+n_{j(t+1)} = \sum_{k=1}^{K}n_{k(t)}a_{kj}
+$$
+Here, $n_{j(t+1)}$ is the count of individuals of age/stage $j$ at time $t+1$. $K$ is the total number of ages/stages, so for each age/stage $k$, we will multiply the number of individuals of age/stage $k$ at time $t$ by the transition rate from age/stage $k$ to age/stage $j$. This represents the contribution of indidivuals of age/stage $k$ at time $t$ to the number of individuals of age/stage $j$ at time $t+1$. Thus, summing these quantities up for all $K$ ages/stages, we get the total number of individuals of size $j$ at time $t+1$, $n_{j(t+1)}$. 
+
+Let's walk through this with some example matrices. Here is the projection matrix for a population with three life stages: 
+
+```{r}
+ex_pmat <- matrix(c(0, 0, 3, 
+                    .45, .05, 0, 
+                    0, .55, .6), nrow = 3, ncol = 3, byrow = TRUE)
+ex_pmat
+```
+
+Take a moment to consider what this projection matrix tells us about this population's life history. 
+
+Let's now define a vector of the initial stage distribution ($\textbf{N}_0$) and use it to calculate the stage distribution at $t=1$ ($\textbf{N}_1$). 
+
+```{r}
+N0 <- c(20, 14, 6)
+N0 %*% ex_pmat
+```
+
+These are the projected counts for each of the three ages/stages for the next time point. To continue projecting across a longer time frame, we'll just iterate this process in a loop:
+
+```{r}
+iter <- 5
+N_mat <- matrix(NA, nrow = iter + 1, ncol = 3)
+N_mat[1,] <- N0
+for(i in 1:iter){
+  N_mat[i+1, ] <- N_mat[i,] %*% ex_pmat
+}
+N_mat
+```
+
+Now we've got a matrix of the stage distributions across our simulated time frame. To visualize, we might make a plot of the time series of each age/stage. It might also be nice to make a plot of how the total population size changes across time. Below, we'll make these two plots and string 'em together using the `patchwork` package. 
+
+```{r}
+# wrangle matrix into format more ammenable to plotting
+new_df <- N_mat %>%
+  as.data.frame() %>%
+  mutate(t = 1:nrow(.)) %>%
+  pivot_longer(cols = 1:3, names_to = "stage", values_to = "size") %>%
+  mutate(
+    stage = case_when(
+      stage == "V1" ~ "small", 
+      stage == "V2" ~ "medium",
+      stage == "V3" ~ "large"
+    )
+  )
+
+p1 <- new_df %>%
+  ggplot(aes(x=t, y=size, color=stage)) + 
+  geom_point() + geom_line(linetype = "dashed") + 
+  theme_classic(base_size = 15) + 
+  xlab("Time (years)") + ylab("Number of Individuals")
+
+p2 <- new_df %>%
+  group_by(t) %>%
+  summarize(n = sum(size)) %>%
+  ggplot(aes(x=t, y=n)) + 
+  geom_point() + geom_line(linetype = "dashed") + 
+  theme_classic(base_size = 15) + 
+  xlab("Time (years)") + ylab("Total Number of Individuals")
+
+p1 / p2
+```
+
+Let's take a moment to consider these results. It might strike you as odd that this time series of total population size is not <font color="#E0AC00"> __monotonic__ </font>, meaning that it does not _just_ increase or decrease. In year four, we experience a decrease in the population. As we mentioned earlier, this sort of simple MPM will _eventually_ behave like our geometric growth model, but only _after_ it reaches it's <font color="#E0AC00"> __stable stage distribution__ </font>. This distribution is the ratio of each age/stage that the population approaches. We started our simulation at some stage distribution that was not the stable stage distribution, and five years was probably not enough time to get to the stable stage distribution. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 4  </font>
+
+__Repeat the simulation that we just performed, but instead of simulated across $5$ years, simulate across $50$ years. Do you think that $50$ years was long enough to reach the stable stage distribution? Why or why not?__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 5  </font>
+
+__Starting from an initial stage distribution of__ $\textbf{N}_0 = [10,10,10,10]$, __simulate the population growth of Organism X for ten years and plot the time series of the stage distribution.__
+
+</div>
+<br>
+
+# Introduction to Stochastic Simulations
+
+So far in these worksheets, we have worked exclusively with <font color="#E0AC00"> __deterministic__ </font> models, meaning that given the same set of both _parameters_ and _initial values_, a number of repeated simulations from the model will always produce the same time series of population sizes. Recall that we saw some _seemingly_ random behavior when we kept the _parameters_ constant but varied the _initial values_ a bit, and we called this _chaos_ or _sensitivity to initial conditions_. Importantly, however, the exact same initial conditions would still produce the exact same simulation results. We will now introduce the concept of <font color="#E0AC00"> __stochasticity__ </font> and begin working with stochastic population models. 
+
+Stochasticity, for all intents and purposes, is a fancy word for _randomness_. We use this fancy term in part because its fun and in part because it differentiates the technical concept of randomness from the more colloquial use. In day to day life, you may consider a process to be _random_ if you can't perfectly predict it. It may be that if you had all of the information about the structural form of whatever process you're trying to predict as well as the values of the relevant parameters and initial values, that you could actually predict that process perfectly, in which case the process would not be _stochastic_. _Stochastic_ processes are those that you cannot predict perfectly given the structural form of the equation defining the process and the exact values of the parameters and initial values. In practice, identifying stochasticity in our computer simulations will be much easier that identifying stochasticity in the real world, and the exact nature of stochasticity in the real world is an important area of discourse which weaves together philosophy and physics. This is neither a philosophy or a physics course, however, so we will take a more pragmatic approach to exploring stochasticity. 
+
+Stochastic models have a deterministic component and a stochastic component. In fact, to define a stochastic population model, we often start with a determinisitc population model and add in stochasticity. How exactly we do this introduces important decisions about what specific processes are stochastic and what form this stochasticity takes on. One common way to incorporate <font color="#E0AC00"> __demographic stochasticity__ </font> into a population model is to define the output of the deterministic population model as the <font color="#E0AC00"> __expected value__ </font> of the distribution of realized population sizes. We already know how to compute the output of a deterministic population model, but to understand how we use this value to come up with a distribution of realized population sizes, we will need to learn a bit about <font color="#E0AC00"> __probability distributions__ </font>. 
+
+## Probability Distributions
+
+When we start working with random processes, we have to start thinking in terms of proability. If a given outcome of a process isn't a given, then what is the probability of reaching that outcome? For some processes, any possible outcome is equally as likely. For example, getting a heads or a tails from a fair coin flip is largely equally probable. If you shake a bag of marbles with one marble per color of the rainbow and grab a marble, there is an equal probability of picking any of the colors. But what if there were more blue marbles than yellow marbles? Or what if the coin you flipped is slightly heavier on one side? The probability of reaching each possible outcome varies. We can define the variable probabilities of reaching some outcome using equations which we call <font color="#E0AC00"> __probability mass functions__ </font> when the outcome is discrete or <font color="#E0AC00"> __probability density functions__ </font> when the outcome is continuous. These functions describe the probability distribution across the possible values of the random variable (ie the outcome of the random process). 
+
+There are technically infinite types of probability distributions, but in practice ecologists tend to use a few common ones. In this worksheet, we will learn about three very important ones: the binomial distribution, the Poisson distribution, and the normal distribution. [Here](https://www.acsu.buffalo.edu/~adamcunn/probability/probability.html) is a nifty resource for exploring the relationships between different probability distributions as well as how the parameters which underly each probability distribution determine the shape of the distribution. 
+
+### The Binomial Distribution
+
+Given some probability of landing a heads, $p$, on some coin toss, what is the probability of landing $8$ heads on $10$ flips? In other classes, you may have computed such probabilities by hand, but we will not dwell on hand calculating such probabilities in this class. Instead, it is important to know that we _can_ compute this probability given some equation which takes the number of heads under consideration, the total number of flips, and the probability of getting heads on any one toss. This equation is the probability mass function for the <font color="#E0AC00"> __binomial distribution__ </font>. More broadly, the binomial distribution is the distribution for the number of "successes" given some number of independent "trials" when the probability of success is equal across all trials. These successes need not be landing a heads on a coin toss, but we could instead use the binomial distribution to describe the number of plants that are flowering during some survey given a total number of plant individuals and some flowering probability, the number of bird eggs which hatch out of some number of eggs layed and some hatching probability, or the number of deer observed during a survey given the total population size and some detection probability. 
+
+The random variable that the binomial distribution describes is the count of successes, and the parameters used in the probability mass function are the number of trials and the probability of success. The probability mass function for the binomial distribution is defined for any integer between $0$ and the number of trails. We can feed these values into a suite of functions to calculate the probability of getting a certain number of successes or to randomly simulate count values given some number of trials and some success probability. For example, we can use `dbinom()` to calculate the probability of getting $8$ heads from $10$ fair coin tosses: 
+
+```{r}
+dbinom(x = 8, size = 10, prob = .5)
+```
+
+We can use this function as well to plot the probability mass for all possible outcomes (ie $0:10$ successes):
+
+```{r}
+cbind.data.frame(x = 0:10, 
+                 prob = dbinom(x = 0:10, size = 10, prob = .5)) %>%
+  ggplot(aes(x = x, y = prob)) + 
+  geom_bar(stat = "identity") + 
+  theme_classic(base_size = 15) + 
+  ylab("Probability Mass") + xlab("Count")
+```
+
+
+Now, in theory, we should get a very similarly shaped graph if we randomly drew values from this probability distribution a bunch of times and plotted the frequencies of each value. In fact, the more numbers we simulate, the closer the proportion of each value should approximate the probability mass for each value. Let's look at such a graph of $10,000$ randomly drawn values from that same distribution using the `rbinom()` function: 
+
+```{r}
+cbind.data.frame(x = rbinom(n = 1*10^4, size = 10, prob = .5)) %>%
+  ggplot(aes(x = x)) + 
+  geom_bar() + 
+  theme_classic(base_size = 15) + 
+  ylab("Frequency") + xlab("Count")
+```
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 6  </font>
+
+__To explore the role of the success probability in determining the shape of the binomial distribution, recreate the plot above of the probability mass across the count values $0:10$ with a success probability of $0.25$.__
+
+</div>
+<br>
+
+### The Poisson Distribution
+
+The binomial distribution is great for modeling count data when the count data was generated from some number of discrete opportunities for some event to happen. However, some events don't happen in the context of discrete trials. Some events may happen at any point across some interval of continuous time or space. For such count data, we often use the <font color="#E0AC00"> __Poisson distribution__ </font> which is named after a guy... not fish. The probability mass function for the Poisson distribution only contains one parameter, the rate parameter $\lambda$. This $\lambda$ is __NOT__ the same thing as $\lambda$ in the context of intrinsic or asymptotic growth rates of populations. In this course, we will try to be as specific as possible about parameter notation to avoid confusion. 
+
+This rate parameter, $\lambda$, represents the rate at which an event happens per unit space or time. $\lambda$ might be the expected number of fish caught in an hour of fishing, or it might be the expected number of mushrooms found within a meter squared quadrat. Thus, $\lambda$ is a parameter used to calculate the probability mass of Poisson distributed counts, but it is also the expected average count given some set of counts randomly generated from the same Poisson distribution. Even more than that, it happens to be the variance of that set, leading to an interest characteristic of Poisson distributed counts which is that the mean of the random variable equals the variance. 
+
+Again, we have a probability distribution that describes the probability of a given count happening. As opposed to the binomial distribution, the Poisson distribution is now defined for an integer from $0$ to $\infty$. We can calculate the probability mass using `dpois()` and we can simulate random numbers from a Poisson distribution using `rpois()`. 
+
+Let's look at the probability mass values for Poisson distributions with a few different values of $\lambda$. To do this, I will calculate the probability mass for the values $0:25$ using three different $\lambda$ values: $5$, $10$, and $15$. Recall, however, that the probability mass function is defined for an integer to $\infty$, but we will truncate this distribution at $25$ because beyond this point, the probability mass is _nearly_ $0$. 
+
+```{r}
+cbind.data.frame(count = 0:25, 
+                 l5 = dpois(0:25, 5), 
+                 l10 = dpois(0:25, 10), 
+                 l15 = dpois(0:25, 15)) %>%
+  pivot_longer(cols=2:4, names_to = "lambda", values_to = "mass") %>%
+  ggplot(aes(x = count, y = mass, fill = lambda)) + 
+  geom_bar(stat = "identity", position = "identity", alpha = .5) + 
+  theme_classic(base_size = 15) + 
+  ylab("Probability Mass") + xlab("Count")
+```
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 7  </font>
+
+__Recall that $\lambda$ is equal to the mean and the variance of a Poisson distributed random variable.__ 
+
+__1) Describe in words why the relative shapes of the distributions in the above graph make sense in light of this fact. (Hint: What about the shape of these distributions tells you about the mean and variance?)__
+
+__2) Demonstrate for yourself that this fact is true by simulated $10,000$ values each from three Poisson distributions using `rpois()`: one with $\lambda = 5$, $\lambda = 10$, and $\lambda = 15$. Display a data frame that compares the value of $\lambda$, the mean of the associated $10,000$ random numbers, and the variance of the $10,000$ numbers.__
+
+</div>
+<br>
+
+### The Normal Distribution
+
+The last distribution that we will introduce today may be the most commonly discussed probability distribution. The <font color="#E0AC00"> __normal (Guassian) distribution__ </font> is a continuous probability distribution and is the most commonly use probability distribution used in statistical modeling and parameter estimation. This distribution describes random variables that can take on any value from $-\infty$ to $\infty$ and is defined by two parameters, the mean ($\mu$) and standard deviation ($\sigma$) of the random variable. Many random variables do not conform exactly to the assumptions of the normal distribution, but have distributions which are approximated by the normal distribution remarkably well. For example,the rate parameter in the Poisson distribution gets larger, that distribution approaches a normal distribution where $\mu = \sigma = \lambda$. Because many random variables seem roughly normally distributed, this distribution has historically been at the core of statistics. In ecology, many variables might be approximated decently well with a normal distribution. Although many ecologists use the normal distribution to describe nearly any random variable, it is mostly helpful for describing continuous variables that either range from $-\infty$ to $\infty$ or which are bound to be positive or negative but tend to be sufficiently far from $0$. 
+
+Because we are now working with a continuous probability distribution, we will use a probability density function which is defined for non-integer, real numbers. This will be reflected in how we choose to visualize this function, moving from bar graphs to density plots. Here is a plot of the probability density for some normal distributions with a few different values for $\mu$ and a couple values for $\sigma$: 
+
+```{r}
+ggplot() + 
+  stat_function(fun = function(x) dnorm(x, mean = 0, sd = 1), 
+                color = "lightblue", linewidth = 2) + 
+  stat_function(fun = function(x) dnorm(x, mean = 2.5, sd = 1), 
+                color = "darkblue", linewidth = 2) + 
+  stat_function(fun = function(x) dnorm(x, mean = 0, sd = 2.5), 
+                color = "pink", linewidth = 2) + 
+  stat_function(fun = function(x) dnorm(x, mean = 2.5, sd = 2.5), 
+                color = "darkred", linewidth = 2) + 
+  xlim(-5, 5) + theme_classic(base_size = 15) + 
+  xlab("Value") + ylab("Probability Density")
+```
+
+Now, we have some of the basics down such that we can start performing stochastic simulations!
+
+## A Stochastic MPM
+
+Now that we have acquired some tools for describing stochastic processes (probability distributions), we are ready to build up a stochastic MPM. As a reminder, a stochastic population model includes a deterministic model as well a stochastic process. We have already defined a deterministic population model, so let's start with our example matrix from earlier. One rather simple way to incorporate <font color="#E0AC00"> __demographic stochasticity__ </font> is to assume that all stochastic demographic processes can be approximated by calculating the projected population size using our deterministic population model and defining this as the expected value for some probability distribution. In our case, let's use our MPM and a vector of population sizes at time $t$ to calculate the expected count of each stage at time $t+1$, and let's feed these values into `rpois()` to generate some random count data: 
+
+```{r}
+N0 <- c(20, 14, 6) # initial values
+exp_N1 <- N0 %*% ex_pmat # expected values
+N1 <- rpois(3, exp_N1)
+cbind.data.frame(expected = t(exp_N1), real = N1)
+```
+
+Now, let's repeat our projection procedure from above, but let's embed demographic stochasticity into our simulation by generating random values of the stage distribution each year: 
+
+```{r}
+iter <- 10
+N_mat_exp <- N_mat_real <- matrix(NA, nrow = iter + 1, ncol = 3)
+N_mat_exp[1,] <- N_mat_real[1,] <- N0
+for(i in 1:iter){
+  # store a deterministic version of the simulation
+  N_mat_exp[i+1, ] <- N_mat_exp[i,] %*% ex_pmat
+  
+  # calculate expected pop sizes
+  exp_vals <- N_mat_real[i,] %*% ex_pmat
+  # use expected values to simulate random values
+  N_mat_real[i+1, ] <- rpois(length(exp_vals), exp_vals)
+}
+
+# plot
+p1 <-  N_mat_real %>%
+  as.data.frame() %>%
+  mutate(t = 1:nrow(.)) %>%
+  pivot_longer(cols = 1:3, names_to = "stage", values_to = "size") %>%
+  mutate(
+    stage = case_when(
+      stage == "V1" ~ "small", 
+      stage == "V2" ~ "medium",
+      stage == "V3" ~ "large"
+    )
+  ) %>%
+  ggplot(aes(x=t, y=size, color=stage)) + 
+  geom_point() + geom_line(linetype = "dashed") + 
+  theme_classic(base_size = 15) + 
+  xlab("Time (years)") + ylab("Number of Individuals") + 
+  ggtitle("Stochastic") + 
+  ylim(0, max(c(N_mat_real, N_mat_exp)) + 10)
+
+p2 <-  N_mat_exp %>%
+  as.data.frame() %>%
+  mutate(t = 1:nrow(.)) %>%
+  pivot_longer(cols = 1:3, names_to = "stage", values_to = "size") %>%
+  mutate(
+    stage = case_when(
+      stage == "V1" ~ "small", 
+      stage == "V2" ~ "medium",
+      stage == "V3" ~ "large"
+    )
+  ) %>%
+  ggplot(aes(x=t, y=size, color=stage)) + 
+  geom_point() + geom_line(linetype = "dashed") + 
+  theme_classic(base_size = 15) + 
+  xlab("Time (years)") + ylab("Number of Individuals") + 
+  ggtitle("Deterministic") + 
+  theme(axis.title.y = element_blank()) + 
+  ylim(0, max(c(N_mat_real, N_mat_exp)) + 10)
+
+p1 + p2 + plot_layout(guides = "collect")
+```
+
+Take a moment to compare these two graphs. Notice the somewhat scratchy behavior that we tend to associate with stochastic simulations. 
+
+One common mistake that folks make when they're first learning stochastic simulation is to perform a deterministic simulation and then apply a stochastic filter to the entire output of the simulation. This might be a good way to model observation error, but does not represent the fact that the true values for the state variables are dependent on iterative stochastic processes. Importantly, in this simulation, we did not simulate the full deterministic time series and then use that matrix as expected values to generate a new random matrix. Instead, we retained the effect of stochasticity on population growth by using the random population sizes during our projections. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 8  </font>
+
+__Repeat this procedure with our Organism X projection matrix. Perform a stochastic simulation, incorporating demographic stochasticity by treating the projected stage sizes as expected values of a Poisson distributed random variable. Perform the simulation and produce a graph of the four stages across 25 years, starting from an initial stage distribution of $N_0 = [10,10,10,10]$.__
+
+</div>
+<br>
+
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #FFE285; border-radius: 5px;">
+__A note on (pseudo-)random number generators:__ In this past section, we've been working with numbers sampled using `rbinom`, `rpois`, and `rnorm`. We will often refer to these as random number generators, but this is not completely correct. These number generators approximate randomness, but require a _seed_, which kicks off a particular string of random indices. Thus, if the same seed is used, the same exact output should be expected if the code were to be run again. If you check `setup` chunk in each of your worksheets, you'll notice `set.seed(6)`. This sets the seed for the script. `6` is a completely arbitrary number, but often people pick their favorite number and tend to stick with it. 
+
+The fact that our pseudo-random number generators can produce replicated results given the same seed is not simply a shortcoming of our ability to capture true randomness, but it is an asset for doing _reproducible_ work. Being able to recreate the output of a stochastic process is indespensible for troubleshooting your or others' code or identifying what features of the particular simulation run cause particular behavior in the simulation output. 
+
+R does not have access to a true random number generator. True random number generators use information from processes that we generally expect to be _truly_ random, such as radioactive decay.
+</div>
+
+## Monte Carlo Simulations
+
+In light of stochasticity, how can we make inference about population dynamics? If I wanted to know how increasing the transition probability of small to medium sized individuals affects the projected population size at year $t$, I could come to a very definitive answer by calculating the size at $t$ when the transition probability is $.45$ and then again when we increase the transition probability by $1\%$ (ie $.45 + (.45 * .01)$). Given $\textbf{N}_0 = [20, 14, 6]$, we can find the percent change in total population size with a $1\%$ increase in that transition probability with the following code: 
+
+```{r}
+ex_pmat2 <- ex_pmat # duplicate ex_pmat
+ex_pmat2[2,1] <- ex_pmat[2,1] * (ex_pmat[2,1] * 0.01) # calculate new transition probability
+
+N0 <- c(20, 14, 6) # initial values
+N1_original <- sum(N0 %*% ex_pmat) # projected pop size with old matrix
+N1_new <- sum(N0 %*% ex_pmat2) # projected pop size with new matrix
+
+# calculate percent change
+(N1_original - N1_new) / N1_original * 100 
+```
+
+Thus, increasing that transition probability by $1/%$ lead to a roughly $8.49\%$ increase in the population size. If I ran this code again, it would spit out the same answer. But what about a stochastic version of this code? Let's code up a stochastic version, and then iterate the calculation a bunch of times using a loop to see how different our answers might be:
+
+```{r}
+iter = 10
+
+perc_change <- c()
+for(i in 1:iter){
+N0 <- c(20, 14, 6) # initial values
+N1_original <- sum(rpois(3, N0 %*% ex_pmat)) # projected pop size with old matrix
+N1_new <- sum(rpois(3, N0 %*% ex_pmat2)) # projected pop size with new matrix
+
+# calculate percent change and store in vector
+perc_change <- c(perc_change, (N1_original - N1_new) / N1_original * 100)
+}
+
+perc_change
+```
+
+These values seem quite different from one another. Sometimes, our calculated percent change is even negative. If we were to take one of these numbers and make inference based off of that value alone, we might end up concluding that increasing the transition probability from small to medium individuals actually decreases the population size at time $t=1$. Thus, when we are interested in stochastic population dynamics, we should not just run a simulation once and call it a day. We should run the simulation a bunch of times and describe important features of the distribution of outcomes. We call this procedure of running a stochastic simulation a bunch of times <font color="#E0AC00"> __Monte Carlo simulation__ </font> (named after a famous casino). 
+
+So how do we describe the outcome distribution? We could certainly visualize this distribution as a histogram of values as such: 
+
+```{r}
+iter = 1 * 10^4
+
+perc_change <- c()
+for(i in 1:iter){
+N0 <- c(20, 14, 6) # initial values
+N1_original <- sum(rpois(3, N0 %*% ex_pmat)) # projected pop size with old matrix
+N1_new <- sum(rpois(3, N0 %*% ex_pmat2)) # projected pop size with new matrix
+
+# calculate percent change and store in vector
+perc_change <- c(perc_change, (N1_original - N1_new) / N1_original * 100)
+}
+
+cbind.data.frame(x = perc_change) %>%
+  ggplot(aes(x = x)) + 
+  geom_histogram() + 
+  theme_classic(base_size = 15) + 
+  ylab("% Change in Population Size") + 
+  xlab("Frequency")
+```
+
+This is nice, but maybe we want to simplify this distribution into some nice summary statistics. To communicate the central tendency, we might calculate the mean, but this distribution seems a bit skewed so maybe the median might be more informative. We could also characterize the variation by calculating the standard deviation. Then we might get a better sense of what value the percent change is expected to take on as well as about how far off from that expected value will most values be. 
+
+```{r}
+median(perc_change)
+sd(perc_change)
+```
+
+The median looks pretty similar to our deterministic answer! However, the variation is quite high relative to the central tendency. 
+
+If we wanted a simple answer at whether increasing the transition probability increases the population size, however, we might calculate the probability that increasing the transition probability leads to a positive percent change. We can estimate this probability using our Monte Carlo distribution by finding the proportion of of our final percent change values that are positive. 
+
+```{r}
+sum(perc_change > 0) / length(perc_change)
+```
+
+Based on our Monte Carlo simulation, we can say that there is about a $68.89\%$ chance that increasing the transition probability increase the population size at $t=1$. 
+
+Perhaps the rationale for doing such a method seems a bit silly. Our deterministic approach came to a solid answer quite easily. Our Monte Carlo approach seems to suggest a similar answer but with much less certainty, which makes sense because we added stochasticity. Why don't we just work with deterministic models? Well, the real world is stochastic and uncertain. This means that there are (at least) two big reasons why we might want to work with Monte Carlo simulations of stochastic simulations:
+
+1) Randomness in and of itself may result in quite different population dynamics than those predicted by deterministic models. In our relatively simple example, we came to a similar qualitative conclusion when we used Monte Carlo simulations of our stochastic model as we did when we used a deterministic model. This will not always be the case. The more complex the model is, and the more layers of stochasticity, the more opportunities there are for stochasticity to create unintuitive outcomes. Monte Carlo methods can be used in purely theoretical work to explore the role of stochasticity in determining population dynamics. 
+
+2) Monte Carlo simulations can be used to propagate any uncertainty we might have about aspects of our model. For example, when we estimate vital rates from data using parameter estimation methods, we are never totally certain of the values of our vital rates. Thus, we could use Monte Carlo methods to pull random vital rate values from some probability distribution during our simulations. We can then express some characteristic of our simulations in terms of probabilities, thus propogating our parameter uncertainty into our final inference about the population dynamics. Parameter estimation methods are paired quite nicely with Monte Carlo simulations of population models to provide robust statistical inference about population dynamics. 
+
+### Practice Questions
+
+Now, let's use Monte Carlo methods to make inference about a slightly more complicated question: How does <font color="#E0AC00"> __environmental stochasticity__ </font> impact the extinction risk of a population? Monte Carlo methods are used often in population ecology to characterize the probability of a population going extinct due to stochasticity. We'll first build up a model of our environmentally stochastic population (let's work with Organism X). Then, we will run a bunch of Monte Carlo simulations across a range of magnitudes of environmental stochasticity. Finally, we will compare the extinction risks across these magnitudes. 
+
+How do we embed environmental stochasticity into a population model? First, we will define some random environmental variable that will influence our population's demography. We will say that rainfall is a random variable that can be described with a normal distribution. Let's go ahead and center our rainfall variable at $0$, as it is quite common to scale or z-transform environmental variables such that the mean of their distribution is set to 0 and the unit of the variable becomes the standard deviation of their true distribution of raw values. So let's say that our annual rainfall variable (we'll call this $R$), under baseline conditions, can be described as: 
+
+$$
+R \sim Normal(\mu = 0, \sigma = 1)
+$$
+
+Now, we need to define how this random variable affects the demography of Organism X. Still keeping this example relatively simple, let's say that Organism X has rainfall dependent fecundity, but that it's survival and growth are independent of rainfall. Thus, we only need to define relationships between rainfall and the two fedundity parameters in Organism X's projection matrix. These fecundity parameters are no longer constants, but instead functions which take rainfall as an input and spit out a value for that year's stage-dependent fecundity. The simplest relationship we could define is that of a linear model, so let's say that the fecundity of Organism X increases linearly with rainfall. 
+
+We now have four new parameters: the two intercepts of the equations which represent the fecundity of the two stages with average rainfall, and the two slopes of the equations which represent the change in each stage's fecundity with an increase in rainfall by one standard deviation (notice how scaling the rainfall variable leads to nicely interpratable parameters in the linear equation). Perhaps stage four individuals receive some fairly large decrease in their fecundity with more rainfall, and stage three individuals receive some even larger decrease in their fecundity with more rainfall. Throwing some arbitrary numbers in these equations, we can define the fecundity of Stage $3$ individuals as: 
+
+$$
+F_3 = 5 - 5R
+$$
+
+and the fecundity of Stage $4$ individuals as: 
+
+$$
+F_4 = 10 - 3R
+$$
+
+Finally, let's say that our population also experiences demographic uncertainty such that the realized size of each stage at time $t + 1$ is Poisson distributed with an expected value of the projected stage size (as we did in the example above).
+
+Voila! We've defined our MPM with both environmental and demographic stochasticity. The deterministic portion of the model is just our projection matrix from before with deterministic functions of rainfall replacing our fecundity components. The stochastic portions are the normally distributed random rainfall variable and the Poisson distributed projections. Now, let's answer some practice questions to build up our analysis. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 9  </font>
+
+__First, let's write a function that takes last year's stage distribution for Organism X and last year's value for annual rainfall, and spits out a projection for this years stage distribution for Organism X. These will become the expected values for our Poisson distribution during our simulation, but let's start with a function to get those expected values. You'll also want to make sure that the fecundity values never become negative, so you may wish to use the `ifelse()` function to impose a hard boundary on the calculated fecundity value.__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 10  </font>
+
+__Now, we will want to setup the Monte Carlo simulation code. Before we run the Monte Carlo simulations for each of our environmental stochasticity conditions, let's run it once at the baseline. Recall that at the end of the simulation, we want to calculate the extinction probability, which is the proportion of our Monte Carlo simulations which resulted in the population going extinct. Let's start each of these simulations at the same initial stage distribution of $N_0 = [3, 3, 3, 3]. Use $1000$ Monte Carlo iterations for this analysis, and have each Monte Carlo iteration run for $50$ years. Thus, you'll need to pull values for $R$ for each year, and let's begin by pulling these values from the standard normal distribution with $\mu = 0$ and $\sigma = 1$. At the end of each iteration, determine whether the final population size is $0$ or not. Return the proportion of iterations that resulted in extinction. (Hint: This number should probably be 0 or very very close to 0 under these baseline conditions)__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 11  </font>
+
+__Finally, to answer our original question, let's repeat this process for five different stochasticity treatments in which we'll vary the standard deviation of the distribution of rainfall. The five conditions will be $\sigma = 1:5$. For each of these values of $\sigma$, repeat the Monte Carlo simulation to get the extinction probability. This might take a minute, but if it's taking longer than 3-5 minutes, there might be something wrong or your computer might be struggling to meet the computational demand (so talk with Jeremy about this). Finally, compile these values and make a graph of the extinction probabilities as a function of $\sigma$. What role does environmental stochasticity play in determining the extinction probability of this population?__
+
+</div>
+<br>
+
+# Eigenanalysis of the Projection Matrix
+
+In this class, we will often encounter matrices which act as a set of rules that describe system dynamics. The projection matrix, for example, is a set of rules that transforms last year's population structure to this year's structure. How do we condense this matrix, which encapsulates many stage dependent demographic processes, into key bits of information about the dynamics of our population? We perform an <font color="#E0AC00"> __eigenanalysis__ </font> on the matrix. 
+
+Eigenanalysis is a mathematical procedure that extracts important information from a matrix. If the matrix is a set of rules that we will apply to transform some vector, the eigenanalysis identifies vectors for which the rules _do not_ change the direction of the vector. These special vectors are called <font color="#E0AC00"> __eigenvectors__ </font>. The matrix likely still changes the length of the vector, and how it changes the length is denoted by a value called an <font color="#E0AC00"> __eigenvalue__ </font>. Do not worry if this feels overwhelmingly abstract. We will omit the details of this analysis for the sake of this class because understanding how an eigenanalysis works requires an understanding of a handful of operations from linear algebra, but if you are curious about eigenanalysis, [here is a good video visualization](https://youtu.be/PFDu9oVAE-g?si=qy3QyzOY1gvZYY5U) of how it works. 
+
+In ecology, we commonly use eigenanalysis for a few different types of problems. In this worksheet, we will learn how to perform eigenanalysis on the projection matrix to gain intuition about the fundamental dynamics of the population. In the previous worksheet, we briefly mentioned eigenanalysis of the Jacobian matrix as a means of assessing the stability of multidimensional dynamical systems (which we will discuss more in the next worksheet). Finally, community ecologists quite often perform eigenanalysis on matrices of species abundance by site to collapse community structure into a few major axes of variation. This procedure is called ordination, and can be very helpful for visualizing shifts in community composition. 
+
+The output of an eigenanalysis on an $n \times n$ matrix is a list of $n$ eigenvectors, each of which have $n$ entries, and an associated list of $n$ eigenvalues. We perform the eigenanalysis using the `eigen()` function in R. Here is an example with our example projection matrix from earlier: 
+
+```{r}
+ex_eig <- eigen(ex_pmat)
+ex_eig
+```
+
+We will explore what all of this tells us about population dynamics in the following sections. 
+
+### Finite Rate of Increase
+
+The dominant eigenvalue is the largest of the eigenvalues and is conventionally reported as the first value. In the context of structured population models, this represents the finite rate of increase of the population $\lambda$ similar to that of $\lambda$ in our geometric sequences. Recall that the eigenvalue determines how much an input vector is shrunk or stretched, so in the context of our stage distribution vector, this value tells us how much the total population size decreases or increases (once we hit our stable stage distribtution). Here is some code to isolate $\lambda$ from our eigenanalysis:
+
+```{r}
+pos.dom <- which.max(ex_eig$values)
+L1 <- Re(ex_eig$values[pos.dom])
+L1 # dom eigenvalue
+```
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 12  </font>
+
+__Calculate the finite rate of increase for Organism X.__
+
+</div>
+<br>
+
+### Stable Stage Distribution
+
+The dominant eigenvector associated with this dominant eigenvalue represents the stable stage distribution of our population. For our example matrix, here is some code to isolate this distribution:
+
+```{r}
+pos.dom <- which.max(ex_eig$values) # in case you wrote over this item
+w1 <- Re(ex_eig$vectors[,pos.dom]) # dominant eigen vector
+ssd <- w1/sum(w1) # converting to proportions
+ssd
+```
+
+Thus, once we've reached this distribution, the population should remain with `r round(ssd[1], 2)` of individuals at Stage 1, `r round(ssd[2], 2)` of individuals at Stage 2, and  `r round(ssd[3], 2)` of individuals at Stage 3.
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 13  </font>
+
+__Calculate the stable stage distribution for Organism X.__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 14  </font>
+
+__Identify how many years it would take for all four stages to get within $0.1\%$ of their stable stage distribution size when the population starts from a population size of $\textbf{N}_0 = [10, 10, 10, 10].$__
+
+</div>
+<br>
+
+## Reproductive Values
+
+Using these projection matrices, we can also calculate a value that describes the contribution of a given stage or age to the growth of the population. This value is known as the reproductive value and can be calculated by finding the left eigenvector (thus having a value for each life stage). To find the left eigenvectors and eigenvalues, we must perform an eigenanalysis on the transpose of the projection matrix as such:
+
+```{r}
+ex_eig2 <- eigen(t(ex_pmat))
+ex_eig2
+```
+
+Similar to the values of the stable state distribution, we need to standardize these values. Instead of making all values in the vector relative to the total population size at time t (as we did for the stable state distribution), we will make all values relative to the size of the first stage. Thus, if $v_1$ is the dominant left eigenvector, the reproductive values are 
+
+$$
+\frac{v_1}{v_{1[1]}}
+$$
+
+Here is some code to calculate the reproductive values for our example matrix:
+
+```{r}
+pos.dom2 <- which.max(Mod(ex_eig2$values)) # get index of dom eigenvalue
+v1 <- Re(ex_eig2$vectors[,pos.dom2]) # get value of dom eigenvalue
+rv <- v1/v1[1] # calculate reproductive values
+rv
+```
+
+It is often the case, as in this example, that the reproductive value is higher for later stages. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 15  </font>
+
+__Calculate the reproductive values for Organism X.__
+
+</div>
+<br>
+
+## Sensitivity Analysis
+
+Among the more common metrics that we can calculate from a projection matrix are sensitivites and elasticities. Sensitivities are the contributions of each transition element to the growth rates (ie $\frac{\partial \lambda}{\partial \alpha_{ij}}$). Conceptually, this concept should be related to that of the stable stage distribution and the reproductive values. Thus, it should make some sense that we can use the dominant left and right eigenvectors to calculate the sensitivities. Sensitivities can be calculated as:
+
+$$
+\frac{\partial \lambda}{\partial \alpha_{ij}} = \frac{v_{1[i]}w_{1[j]}}{v_1 \cdot w_1 }
+$$
+
+In R:
+
+```{r}
+s <- matrix(rv, nr=3, nc=1) %*% matrix(ssd, nr=1, nc=3) / # numerator of above formula
+  sum(rv*ssd) # denominator of above formula
+s
+```
+
+Elasticities are these values weighted by the transition probabilities. Thus, we can calculate the elasticities as:
+
+$$
+e_{ij} = \frac{\partial \lambda/\lambda}{\partial \alpha_{ij}/\alpha_{ij}}
+$$
+
+which is equivalent to:
+
+$$
+e_{ij} = \frac{\partial \lambda}{\partial \alpha_{ij}}\frac{\alpha_{ij}}{\lambda}
+$$
+
+In R:
+
+```{r}
+el <- s * (ex_pmat/L1)
+el
+```
+
+These sensitivities and elasticities are useful for making inference about which transitions are most relevant for shifting the population dynamics. For example, we might be concerned about these values if we would like to identify management strategies for endangered, or conversely for pest, species. We might also use these sensitivities/elasticities to help explain mechanistic shifts in population or community dynamics as a function of shifts in environmental conditions. 
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 16  </font>
+
+__Calculate the sensitivities for Organism X.__
+
+</div>
+<br>
+
+<br>
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
+<font size="5">  Exercise 17  </font>
+
+__Calculate the elasticities for Organism X.__
+
+</div>
+<br>
+
+<div style="border: 1px solid #ccc; padding: 10px; background-color: #FFE285; border-radius: 5px;">
+__A note on sensitivity analysis:__ The idea of assessing how different parameters in a population model differentially determine the growth of the population is not unique to eigenanalysis of the projection matrix. Recall that for these MPMs, we're finding $\frac{\partial \lambda}{\partial \alpha_{ij}}$ to quantify the sensitivity of $\lambda$ to $\alpha_{ij}$. We could do something similar for our logistic growth model by finding $\frac{\partial dN/dt}{\partial K}$, which would quantify the sensitivity of the instantaneous growth rate of the population to the value of the carrying capacity. Thus, we can ask questions like, given a particular population model, which parameters are most important for determining the population growth rate, and how does this change with the population size? 
+
+For our logistic growth model, $dN/dt = rN(1 - N/K)$, we can answer such a question by finding those two partial derivatives and evaluating them at a range of population sizes for a given set of parameter values. The partial derivative of this function with respect to $r$ is:
+
+$$
+\frac{\partial dN/dt}{\partial r} = N(1 - N/K)
+$$
+
+and the partial derivative with respect to $K$ is:
+
+$$
+\frac{\partial dN/dt}{\partial K} = \frac{rN^2}{K^2}
+$$
+
+but recall that we can find these equations in R using the `deriv()` function: 
+
+```{r}
+log_fun <- expression(r * N * (1 - N / K))
+derivs <- deriv(log_fun, c("r","K"))
+```
+
+Now, assuming $r = 2$ and $K = 100$, let's find the sensitivity values for these two parameters acrossa range of population sizes: 
+
+```{r}
+r = 2; K = 100; N = 0:100
+cbind.data.frame(attr(eval(derivs),"gradient"), N = N) %>%
+  pivot_longer(cols = 1:2, names_to = "par", values_to = "sens") %>%
+  ggplot(aes(x = N, y = sens, color = par)) + 
+  geom_line(linewidth = 2) + 
+  theme_classic(base_size = 15) + xlab("Population Size (N)") + 
+  ylab("Sensitivity of Population Growth")
+```
+
+Here, we see that generally, the intrinsic growth rate is most important for determining the instantaneous growth rate of the population until we get close to the carrying capacity, at which point the carrying capacity plays a larger role in determining the population growth. If this population was at equilibrium, small changes to $r$ would not matter to much, but shifts in $K$ would be much more impactful for the instantaneous growth rate. 
+
+It is important to note that this process of calculating the sensitivity of some function's output on the parameters of the function is a very common procedure. It is conceptually similar whether we are talking about sensitivities from an eigenanalysis of the projection matrix or these more directly computed partial derivative based sensitivities. The main difference is that we leverage information in the eigenvectors/eigenvalues of the projection matrix to simplify the calculations of the partial derivatives. Whenever matrices get involved, we often simplify procedures via eigenanalysis. For example, sensitivity analyses of multispecies population models, such as the generalized Lotka-Volterra model, also involve eigenanalysis. 
+</div>
+
+
+
+
