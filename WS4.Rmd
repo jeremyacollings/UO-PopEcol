@@ -1,0 +1,56 @@
+---
+title: "Species Interactions"
+output:
+  html_document:
+    theme: "flatly"
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    # keep_md: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+set.seed(6)
+library(tidyverse)
+library(patchwork)
+library(deSolve)
+```
+
+# Introduction
+
+The goals of this week are to:
+
+- revisit the generalized Lotka-Volterra model
+- introduce linear stability analysis of multidimensional systems
+- introduce the predator-prey Lotka-Volterra model (and adaptations)
+- introduce simulating from stochastic ODEs using the Euler-Maruyama method
+
+New Models: generalized Lotka-Volterra (gLV) model; predator-prey Lotka-Volterra model (and various functional forms); MacArthur's consumer-resource model
+New Tools: linear stability analysis; the Euler-Maruyama method for numerical simulation of stochastic ODEs
+
+# The Generalized Lotka-Volterra Model
+
+Recall that in our first worksheet, we learned how to model all sorts of species interactions using the generalized Lotka-Volterra (gLV) model. The gLV looks something like: 
+
+$$
+
+$$
+
+where...
+
+Exercise: Describe each of the 3 pairwise interactions between the species in the following interaction matrix: 
+
+This is simply a bunch of logistic growth models where species don't just affect themselves, but also affect one another. Regardless of the simplicitly of this equation, we can notice an impressively diverse array of system behavior dependent on the number of species in the system, the values of the species' intrinsic growth rates, and the characteristics of the interaction matrix. These relationships have been explored extensively using a number of mathematical tools. In the next section, we will explore just some of these relationships by introducing the concept of feasibility and by revisiting our old friend, local stability analysis. 
+
+# Feasibility and Stability Analysis of the gLV
+
+Can all of the species in our community feasibly coexist? And if they can, do the species tend to hang out at some set of stable equilibrium abundances? How do species' intrinsic growth rates along with species interactions impact how many species can coexist in a community? Or how do these factors impact how resilient a community is to disturbance? Will little pushes away from the equilibrium lead to the extinction of species? Each of these questions have been explored using the gLV, but we will highlight one rather important line of questions today: How do species interaction strengths along with the types of species interactions determine the stability of the community? 
+
+# Predator-Prey Dynamics
+
+# Consumer-Resource Model
+
+# Stochastic ODEs
+
