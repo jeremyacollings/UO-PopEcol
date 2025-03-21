@@ -1528,7 +1528,9 @@ internet)</strong></li>
 <li><strong>Generating data</strong></li>
 <li><strong>Reading in data</strong></li>
 <li><strong>Basics of data wrangling</strong></li>
-<li><strong>Using RMarkdown</strong> </font></li>
+<li><strong>Using RMarkdown</strong></li>
+<li><strong>Basic data visualization in Base R and ggplot</strong>
+</font></li>
 </ul>
 <div id="troubleshooting" class="section level2" number="1.1">
 <h2><span class="header-section-number">1.1</span> Troubleshooting</h2>
@@ -1538,11 +1540,11 @@ you are bound to run into issues in the form of error messages or
 undesirable outputs. Luckily, the internet exists. Not only does the
 internet exist, but the internet contains, within it, practically
 endless resources regarding R. All one has to do is copy and paste an
-error message into a search engine or Google “[x topic] in r” and
-they’re bound to find forums and blog posts dedicated to their issue.
-Further, within recent years, the development of large language models
-(LLMs) such as ChatGPT have dramatically changed how many people
-troubleshoot coding issues (see <a href="https://www.zdnet.com/article/how-to-use-chatgpt-to-write-code-what-it-does-well-and-what-it-doesnt/">this
+error message into a search engine “[x topic] in r” and they’re bound to
+find forums and blog posts dedicated to their issue. Further, within
+recent years, the development of large language models (LLMs) such as
+ChatGPT have dramatically changed how many people troubleshoot coding
+issues (see <a href="https://www.zdnet.com/article/how-to-use-chatgpt-to-write-code-what-it-does-well-and-what-it-doesnt/">this
 blog post</a> for a description of how you might use ChatGPT to help you
 code). We heavily encourage the use of the internet, including LLMs, to
 aid in your coding for this class.</p>
@@ -1641,12 +1643,12 @@ file and knitted .html file on Canvas.</p>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <p><font size="5"> Exercise 1 </font></p>
 <p><strong>Flip back to the .Rmd file and identify where you see the
-following formating syntax:</strong></p>
+following formatting syntax (outside of a chunk of code):</strong></p>
 <ul>
 <li><strong>text bookmarked with two underscores</strong></li>
 <li><strong>text in square brackets followed by text in
 parentheses</strong></li>
-<li><strong>text followed by hashtags</strong></li>
+<li><strong>hashtags followed by text</strong></li>
 </ul>
 <p><strong>Identify what each of these formatting operations do. Feel
 free to use the internet if you cannot figure it out, but please do note
@@ -1684,7 +1686,7 @@ new ones come up.</p>
 <pre class="r"><code>exp(2) # e^2</code></pre>
 <pre><code>## [1] 7.389056</code></pre>
 <p><br></p>
-<p>Notice in the chunk above that there is text to the write of the
+<p>Notice in the chunk above that there is text to the right of the
 hashtag symbol. This is called a <font color="#E0AC00">
 <strong>comment</strong> </font>, and it is very very important. Within
 chunks (or within an R Script), everything will be interpreted as code
@@ -1718,29 +1720,31 @@ dat.pt1</code></pre>
 <pre><code>## [1] 5</code></pre>
 <p>We can also store a set of data as an object called a
 <font color="#E0AC00"> <strong>vector</strong> </font>. To do this, we
-may use the “c” function, which stands for concatenate. If you are
-unfamiliar with this word, the definition will help you understand what
-the “c” function does. If you are still stumped, type into your console
-“?c”, which will pull up the help page for this function. Here are some
-examples of storing sets of data as vectors:</p>
+may use the <code>c()</code> function, which stands for concatenate. If
+you are unfamiliar with this word, the definition will help you
+understand what the <code>c()</code> function does. If you are still
+stumped, type into your console <code>?c</code>, which will pull up the
+help page for this function. Here are some examples of storing sets of
+data as vectors:</p>
 <pre class="r"><code>var1 &lt;- c(5, 4, 6, 3, 5, 5) # store this vector as an object called &quot;var1&quot;
 var2 &lt;- c(8, 9, 9, 9, 8, 7)
 var3 &lt;- c(&quot;red&quot;, &quot;red&quot;, &quot;red&quot;, &quot;blue&quot;, &quot;blue&quot;, &quot;blue&quot;)
 var1</code></pre>
 <pre><code>## [1] 5 4 6 3 5 5</code></pre>
 <p>Note that we can put all sorts of values in a vector. For example,
-var1 and var2 are both numeric vectors, while var3 is a character
-vector. As you code more, you will find it helpful to keep track of what
-sorts of values are stored within your objects.</p>
+<code>var1</code> and <code>var2</code> are both numeric vectors, while
+<code>var3</code> is a character vector. As you code more, you will find
+it helpful to keep track of what sorts of values are stored within your
+objects.</p>
 <p>We can also combine vectors into a single <font color="#E0AC00">
 <strong>data frame</strong> </font>. When we do this, we may wish to
 treat each vector as a column, in which case we’ll want to use the
-function “cbind.data.frame”. Alternatively, we may wish to treat each
-vector as a row, in which case we’ll want to use the function
-“rbind.data.frame”. Often, we have vectors of corresponding values that
-need to be binded as columns such that each row is a different
-“observation” with associated values. As an example, let’s bind the
-vectors above into a dataframe:</p>
+function <code>cbind.data.frame()</code>. Alternatively, we may wish to
+treat each vector as a row, in which case we’ll want to use the function
+<code>rbind.data.frame()</code>. Often, we have vectors of corresponding
+values that need to be binded as columns such that each row is a
+different “observation” with associated values. As an example, let’s
+bind the vectors above into a dataframe:</p>
 <pre class="r"><code>dat &lt;- cbind.data.frame(var1, var2, var3) # combine these 3 vectors as columbs in a dataframe
 dat</code></pre>
 <pre><code>##   var1 var2 var3
@@ -1760,26 +1764,26 @@ multiple methods for accessing contents. Square brackets are perhaps the
 most flexible method for accessing the contents of R objects. We can use
 integer values to <font color="#E0AC00"> <strong>index</strong> </font>
 an object and return the specified element. For example, if I want to
-access the third element of the var1 vector, I can use the following
-code:</p>
+access the third element of the <code>var1</code> vector, I can use the
+following code:</p>
 <pre class="r"><code>var1[3]</code></pre>
 <pre><code>## [1] 6</code></pre>
-<p>Similarly, if I wish to access the 3rd column of the dat data frame,
-I can use the following code:</p>
+<p>Similarly, if I wish to access the 3rd column of the <code>dat</code>
+data frame, I can use the following code:</p>
 <pre class="r"><code>dat[,3]</code></pre>
 <pre><code>## [1] &quot;red&quot;  &quot;red&quot;  &quot;red&quot;  &quot;blue&quot; &quot;blue&quot; &quot;blue&quot;</code></pre>
 <p>Indexing two-dimensional objects using square brackets requires two
 values, the row and column indices, separated by a comma. When one or
 both values are left blank (as the row value is in the preceding chunk),
 all values for that dimension are returned.</p>
-<p>For objects with named elements, we can use the $ operator. For
-example, the columns of dat are named, so we can rewrite the last chunk
-as:</p>
+<p>For objects with named elements, we can use the <code>$</code>
+operator. For example, the columns of <code>dat</code> are named, so we
+can rewrite the last chunk as:</p>
 <pre class="r"><code>dat$var3</code></pre>
 <pre><code>## [1] &quot;red&quot;  &quot;red&quot;  &quot;red&quot;  &quot;blue&quot; &quot;blue&quot; &quot;blue&quot;</code></pre>
 <p>which returns the same values. If we wanted to, we could name the
-values of a vector, matrix, or list and using the $ operator to retrieve
-species values too.</p>
+values of a vector, matrix, or list and using the <code>$</code>
+operator to retrieve species values too.</p>
 <p>Indexes need not be just one integer or one element name. If we place
 a vector of integers or names into the square brackets following an
 object’s name, we can return each of the indicated values from the
@@ -1795,24 +1799,27 @@ var2.</strong></p>
 <p><br></p>
 <p>Finally, we can use <font color="#E0AC00"> <strong>boolean</strong>
 </font> (true or false) to index values. The output is the elements
-indicated by the position of TRUE values. We can do so explicitly, like
-in the following chunk of code:</p>
+indicated by the position of <code>TRUE</code> values. We can do so
+explicitly, like in the following chunk of code:</p>
 <pre class="r"><code>var1[c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)]</code></pre>
 <pre><code>## [1] 5 4 6</code></pre>
 <p>We can use boolean as indexes via <font color="#E0AC00">
 <strong>logical statements</strong> </font>. Logical statements are
 evaluated by R and return Boolean, which become the indices if used
 within square brackets. For example, if I wanted to return the values of
-var1 for which var3 is “red”, I can use the following chunk of code:</p>
+<code>var1</code> for which <code>var3</code> is “red”, I can use the
+following chunk of code:</p>
 <pre class="r"><code>var1[var3 == &quot;red&quot;]</code></pre>
 <pre><code>## [1] 5 4 6</code></pre>
-<p>Note that “==” is a logic operator meaning “is equal to”. It’s easy
-to mix this up with “=”, which is an assignment operator. Other logical
-operators are “&lt;”, “&gt;”, “&lt;=”, “&gt;=”, and “%in%”, which mean
-“is less than”, “is greater than”, “is less than or equal to”, “is
-greater than or equal to”, and “is within” respectively. You can
-compound logical statements with “&amp;” which means “and” or “|” which
-means “or”.</p>
+<p>Note that <code>==</code> is a logic operator meaning “is equal to”.
+It’s easy to mix this up with <code>=</code>, which is an assignment
+operator. Other logical operators are <code>&lt;</code>,
+<code>&gt;</code>, <code>&lt;=</code>, <code>&gt;=</code>, and
+<code>%in%</code>, which mean “is less than”, “is greater than”, “is
+less than or equal to”, “is greater than or equal to”, and “is within”
+respectively. You can compound logical statements with
+<code>&amp;</code> which means “and” or <code>|</code> which means
+“or”.</p>
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <p><font size="5"> Exercise 4 </font></p>
@@ -1838,7 +1845,7 @@ objects that do stuff, and they look like a string of characters
 followed by a set of parentheses. Within the parentheses are arguments
 that modify what exactly the function does.</p>
 <p>Functions are used to simplify tasks. For example, we could find the
-sum of all the data for var1 this way:</p>
+sum of all the data for <code>var1</code> this way:</p>
 <pre class="r"><code>5 + 4 + 6 + 3 + 5 + 5</code></pre>
 <pre><code>## [1] 28</code></pre>
 <p>Or, we could find the sum using the <code>sum()</code> function:</p>
@@ -1849,20 +1856,17 @@ same thing by specifying var1 within dat like this:</p>
 <pre class="r"><code>sum(dat$var1)</code></pre>
 <pre><code>## [1] 28</code></pre>
 <p>Another note on troubleshooting: you can learn more about a function
-by Googling it, or by typing in the a “?” followed by the name of the
-function in the console (for example, type into the console:
-<code>?sum</code>). The function documentation should open in the help
-tab, and you can find out what the function does, what package it is
-contained in, and which arguments it takes. Three of Jeremy’s favorite
-organisms are white-tailed deer, eastern hemlocks, and rhinoceros
-beetles. You’ll receive an additional 2.5% on this lab assignment if you
-append these three species to your data frame in exercise 3 (along with
-their kingdoms and your personal ratings of their cuteness).</p>
+by searchin for it on some search engine, or by typing in the a
+<code>?</code> followed by the name of the function in the console (for
+example, type into the console: <code>?sum</code>). The function
+documentation should open in the help tab, and you can find out what the
+function does, what package it is contained in, and which arguments it
+takes.</p>
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <p><font size="5"> Exercise 5 </font></p>
-<p><strong>Find the average of var1 for values where var3 is
-red.</strong></p>
+<p><strong>Find the average of <code>var1</code> for values where
+<code>var3</code> is red.</strong></p>
 </div>
 <p><br></p>
 <br>
@@ -1872,8 +1876,9 @@ red.</strong></p>
 does the <code>sum()</code> function contain? What is the purpose of
 this additional argument? Remember that you can find a list of arguments
 that a function takes by looking at the documentation for the function.
-Retrieve the documentation by googling it, or by simple typing “?”
-followed by the name of the function in the console.</strong></p>
+Retrieve the documentation by searching for it on a search engine, or by
+simple typing <code>?</code> followed by the name of the function in the
+console.</strong></p>
 </div>
 <p><br></p>
 </div>
@@ -1920,12 +1925,12 @@ tribolium_dat$fecundity[which(tribolium_dat$sp == &quot;castaneum&quot;)] &lt;- 
 
 head(tribolium_dat)</code></pre>
 <pre><code>##         sp temp fecundity
-## 1 confusum   18       280
-## 2 confusum   20       293
-## 3 confusum   22       317
-## 4 confusum   18       284
-## 5 confusum   20       315
-## 6 confusum   22       288</code></pre>
+## 1 confusum   18       274
+## 2 confusum   20       298
+## 3 confusum   22       296
+## 4 confusum   18       265
+## 5 confusum   20       263
+## 6 confusum   22       331</code></pre>
 <p>Notice three new functions: <code>rep()</code>, <code>rpois()</code>,
 and <code>head()</code>. Take a moment and try to figure out what each
 of them does (but don’t get bogged down in the details, we’ll go over
@@ -1947,14 +1952,14 @@ tribolium_dat &lt;- cbind.data.frame(sp = rep(c(&quot;confusum&quot;, &quot;cast
 
 tribolium_dat %&gt;% head()</code></pre>
 <pre><code>##         sp temp fecundity
-## 1 confusum   18       279
-## 2 confusum   20       298
-## 3 confusum   22       280
-## 4 confusum   18       293
-## 5 confusum   20       278
-## 6 confusum   22       345</code></pre>
+## 1 confusum   18       274
+## 2 confusum   20       321
+## 3 confusum   22       347
+## 4 confusum   18       297
+## 5 confusum   20       313
+## 6 confusum   22       306</code></pre>
 <p>This looks a little nicer. One big difference is the use of the
-“%&gt;%” operator. This is a <font color="#E0AC00">
+<code>%&gt;%</code> operator. This is a <font color="#E0AC00">
 <strong>pipe</strong> </font>, and when you see it, you should read it
 as “and then”. So the code above says “make this data frame, AND THEN,
 make a new column of fecundity values”. The pipe takes the output of the
@@ -1969,13 +1974,13 @@ like this:</p>
 tapply(tribolium_dat$fecundity, list(tribolium_dat$sp, tribolium_dat$temp), 
        mean)</code></pre>
 <pre><code>##           291.15 293.15 295.15
-## castaneum  314.0  359.4  399.0
-## confusum   269.6  304.4  321.8</code></pre>
+## castaneum  316.8  367.2  398.2
+## confusum   273.6  316.0  325.6</code></pre>
 <pre class="r"><code>tapply(tribolium_dat$fecundity, list(tribolium_dat$sp, tribolium_dat$temp), 
        sd)</code></pre>
 <pre><code>##             291.15   293.15   295.15
-## castaneum 18.37117 20.71956 18.88121
-## confusum  16.90562 18.50135 27.77949</code></pre>
+## castaneum 17.00588 20.43771 25.08386
+## confusum  17.50143 11.66190 19.78130</code></pre>
 <p>Or in tidyverse like this:</p>
 <pre class="r"><code>tribolium_dat %&gt;% 
   mutate(temp = temp + 273.15) %&gt;%
@@ -1988,12 +1993,12 @@ tapply(tribolium_dat$fecundity, list(tribolium_dat$sp, tribolium_dat$temp),
 ## # Groups:   sp [2]
 ##   sp         temp mean.fec sd.fec
 ##   &lt;chr&gt;     &lt;dbl&gt;    &lt;dbl&gt;  &lt;dbl&gt;
-## 1 castaneum  564.     314    18.4
-## 2 castaneum  566.     359.   20.7
-## 3 castaneum  568.     399    18.9
-## 4 confusum   564.     270.   16.9
-## 5 confusum   566.     304.   18.5
-## 6 confusum   568.     322.   27.8</code></pre>
+## 1 castaneum  564.     317.   17.0
+## 2 castaneum  566.     367.   20.4
+## 3 castaneum  568.     398.   25.1
+## 4 confusum   564.     274.   17.5
+## 5 confusum   566.     316    11.7
+## 6 confusum   568.     326.   19.8</code></pre>
 <p>Again, don’t worry too much about the details here. You may be
 unfamiliar with functions like <code>tapply()</code>,
 <code>mutate()</code>, <code>group_by()</code>, and
@@ -2055,6 +2060,13 @@ fwrs &lt;- c(&quot;Lupinus rivularis&quot;, &quot;Gernaium robertianum&quot;, &q
 # get my enthusiastic report
 flower_function(fwrs, &quot;Lupinus&quot;)</code></pre>
 <pre><code>## [1] &quot;Wow! You saw 9 species of flowers on your walk to work, and 20 percent were Lupinus! That&#39;s really neat.&quot;</code></pre>
+<p>Often, it is helpful to write out an example of what you would like
+to do before you try to write your function. Once you’ve coded up an
+example, you should 1) identify which elements of your code you’d like
+to be customizable in the function, 2) replace those elements with short
+but informative indexes (these will become the names of the arguments
+within your function), and 3) wrap it all in the <code>function()</code>
+function with the index names as your arguments.</p>
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <p><font size="5"> Exercise 7 </font></p>
@@ -2109,8 +2121,8 @@ the components of the file path (ie the directory names and the file
 name) and strings them together using either a forward or backslash
 depending on your operating system. If you are not storing your data
 file in a subdirectory, you don’t need that function and can instead
-just write read.csv(“nutrient_data.csv”). We’ve read in our data! Now
-lets do things with it!</p>
+just write <code>read.csv(&quot;nutrient_data.csv&quot;)</code>. We’ve read in our
+data! Now lets do things with it!</p>
 </div>
 <div id="data-visualization" class="section level2" number="1.8">
 <h2><span class="header-section-number">1.8</span> Data
@@ -2121,8 +2133,10 @@ data analysis or model construction. How we visualize data depends on
 which dialect of R we are coding in (but remember that you may wish to
 mix dialects). There are plotting functions in Base R, but there is a
 generally nicer set of plotting functions in tidyverse using the
-“ggplot2” package within the tidyverse package. Here, we’ll show how to
-make a quick scatter plot using both approaches.</p>
+<code>ggplot2</code> package within the tidyverse package. Here, we’ll
+show how to make a quick scatter plot using both approaches, but for
+much of the rest of this course we will stick with visualizing data
+using ggplot.</p>
 <div id="scatter-plot-in-base-r" class="section level3" number="1.8.1">
 <h3><span class="header-section-number">1.8.1</span> Scatter plot in
 base R</h3>
@@ -2180,9 +2194,9 @@ medium, and high nutrient level treatments, respectively.</p>
 <p><strong>Use these averages to create a new variable within the
 dataframe for the approximate seed output of each plant. Because the
 average seeds/fruit is dependent on the nutrient treatment, you may need
-to use so sort of ifelse statement or the <code>case_when()</code>
-function (take a moment to google these methods if you are not already
-familiar).</strong></p>
+to use some sort of <code>ifelse</code> statement or the
+<code>case_when()</code> function (take a moment to search these methods
+if you are not already familiar).</strong></p>
 </div>
 <p><br></p>
 <br>
@@ -2195,7 +2209,7 @@ treatment.</strong></p>
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <p><font size="5"> Exercise 12 </font></p>
-<p><strong>Make a bar plot of seed output under each nutrient
+<p><strong>Make a bar plot of average seed output under each nutrient
 treatment.</strong></p>
 </div>
 <p><br></p>
@@ -2210,7 +2224,7 @@ height.</strong></p>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <p><font size="5"> Exercise 14 </font></p>
 <p><strong>Make a scatter plot to compare seed output and stem height,
-but include a best fit line (you may need to google how to do this) for
+but include a best fit line (you may need to search how to do this) for
 each of the three nutrient treatments. Color the points and lines by
 treatment.</strong></p>
 </div>

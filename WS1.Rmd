@@ -33,11 +33,12 @@ __Here is a list of learning objectives that we will cover in this worksheet. We
 * __Reading in data__
 * __Basics of data wrangling__
 * __Using RMarkdown__
+* __Basic data visualization in Base R and ggplot__
 </font>
 
 ## Troubleshooting
 
-Likely the most important skill to have under your belt for coding in R is how to troubleshoot. Regardless of your experience level with R, you are bound to run into issues in the form of error messages or undesirable outputs. Luckily, the internet exists. Not only does the internet exist, but the internet contains, within it, practically endless resources regarding R. All one has to do is copy and paste an error message into a search engine or Google "[x topic] in r" and they're bound to find forums and blog posts dedicated to their issue. Further, within recent years, the development of large language models (LLMs) such as ChatGPT have dramatically changed how many people troubleshoot coding issues (see [this blog post](https://www.zdnet.com/article/how-to-use-chatgpt-to-write-code-what-it-does-well-and-what-it-doesnt/) for a description of how you might use ChatGPT to help you code). We heavily encourage the use of the internet, including LLMs, to aid in your coding for this class.
+Likely the most important skill to have under your belt for coding in R is how to troubleshoot. Regardless of your experience level with R, you are bound to run into issues in the form of error messages or undesirable outputs. Luckily, the internet exists. Not only does the internet exist, but the internet contains, within it, practically endless resources regarding R. All one has to do is copy and paste an error message into a search engine "[x topic] in r" and they're bound to find forums and blog posts dedicated to their issue. Further, within recent years, the development of large language models (LLMs) such as ChatGPT have dramatically changed how many people troubleshoot coding issues (see [this blog post](https://www.zdnet.com/article/how-to-use-chatgpt-to-write-code-what-it-does-well-and-what-it-doesnt/) for a description of how you might use ChatGPT to help you code). We heavily encourage the use of the internet, including LLMs, to aid in your coding for this class.
 
 Additionally, we heavily encourage you to rely on your peers in this class, as well as us (Jeremy & Jeff). Sometimes, you may face specific challenges regarding assignments that are difficult to answer with the help of the internet. _Do not waste hours of time searching the internet for answers._ In these cases, asking peers in lab or on Canvas may be a great option. Alternatively, Jeremy & Jeff are available in or after lecture/lab times as well as during our office hours which are posted on Canvas. However, there is a respectful way to ask people for help with troubleshooting code and we ask that you try to adopt this approach when asking for help. Modified from [this guide on formatting questions on a popular coding forum](https://stackoverflow.com/help/how-to-ask), we request that you: 
 
@@ -67,11 +68,11 @@ Each week, you will download the .Rmd and .html file associated with that week's
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <font size="5">  Exercise 1  </font>
 
-__Flip back to the .Rmd file and identify where you see the following formating syntax:__
+__Flip back to the .Rmd file and identify where you see the following formatting syntax (outside of a chunk of code):__
 
 - __text bookmarked with two underscores__
 - __text in square brackets followed by text in parentheses__
-- __text followed by hashtags__
+- __hashtags followed by text__
 
 __Identify what each of these formatting operations do. Feel free to use the internet if you cannot figure it out, but please do note when these formatting tricks come up in your .Rmd files. __
 </div>
@@ -108,7 +109,7 @@ exp(2) # e^2
 
 <br>
 
-Notice in the chunk above that there is text to the write of the hashtag symbol. This is called a <font color="#E0AC00"> __comment__ </font>, and it is very very important. Within chunks (or within an R Script), everything will be interpreted as code to be run UNLESS it is preceded by a hashtag. This enables us to make code slightly more readable (though does not have full flexibility of markdown syntax within a markdown file). It is very important that you comment your code so that others (most often a future version of yourself, but also Jeremy) can understand what you're trying to do. Some people like to comment out the goal of some section of code while others like to comment out a description of what the code is doing. I often use both sorts of comments. 
+Notice in the chunk above that there is text to the right of the hashtag symbol. This is called a <font color="#E0AC00"> __comment__ </font>, and it is very very important. Within chunks (or within an R Script), everything will be interpreted as code to be run UNLESS it is preceded by a hashtag. This enables us to make code slightly more readable (though does not have full flexibility of markdown syntax within a markdown file). It is very important that you comment your code so that others (most often a future version of yourself, but also Jeremy) can understand what you're trying to do. Some people like to comment out the goal of some section of code while others like to comment out a description of what the code is doing. I often use both sorts of comments. 
 
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
@@ -128,7 +129,7 @@ dat.pt1<- 5 # store the value 5 in an object called 'dat.pt1'
 dat.pt1
 ```
 
-We can also store a set of data as an object called a <font color="#E0AC00"> __vector__ </font>. To do this, we may use the "c" function, which stands for concatenate. If you are unfamiliar with this word, the definition will help you understand what the "c" function does. If you are still stumped, type into your console "?c", which will pull up the help page for this function. Here are some examples of storing sets of data as vectors:
+We can also store a set of data as an object called a <font color="#E0AC00"> __vector__ </font>. To do this, we may use the `c()` function, which stands for concatenate. If you are unfamiliar with this word, the definition will help you understand what the `c()` function does. If you are still stumped, type into your console `?c`, which will pull up the help page for this function. Here are some examples of storing sets of data as vectors:
 
 ```{r storing 2}
 var1 <- c(5, 4, 6, 3, 5, 5) # store this vector as an object called "var1"
@@ -137,9 +138,9 @@ var3 <- c("red", "red", "red", "blue", "blue", "blue")
 var1
 ```
 
-Note that we can put all sorts of values in a vector. For example, var1 and var2 are both numeric vectors, while var3 is a character vector. As you code more, you will find it helpful to keep track of what sorts of values are stored within your objects. 
+Note that we can put all sorts of values in a vector. For example, `var1` and `var2` are both numeric vectors, while `var3` is a character vector. As you code more, you will find it helpful to keep track of what sorts of values are stored within your objects. 
 
-We can also combine vectors into a single <font color="#E0AC00"> __data frame__ </font>. When we do this, we may wish to treat each vector as a column, in which case we'll want to use the function "cbind.data.frame". Alternatively, we may wish to treat each vector as a row, in which case we'll want to use the function "rbind.data.frame". Often, we have vectors of corresponding values that need to be binded as columns such that each row is a different "observation" with associated values. As an example, let's bind the vectors above into a dataframe:
+We can also combine vectors into a single <font color="#E0AC00"> __data frame__ </font>. When we do this, we may wish to treat each vector as a column, in which case we'll want to use the function `cbind.data.frame()`. Alternatively, we may wish to treat each vector as a row, in which case we'll want to use the function `rbind.data.frame()`. Often, we have vectors of corresponding values that need to be binded as columns such that each row is a different "observation" with associated values. As an example, let's bind the vectors above into a dataframe:
 
 ```{r storing 3}
 dat <- cbind.data.frame(var1, var2, var3) # combine these 3 vectors as columbs in a dataframe
@@ -150,13 +151,13 @@ dat
 
 There are a few more object types that you will likely come across in this class, including functions (see below), matrices, arrays, and lists. We'll try to explain these object types as we encounter them. 
 
-Quite often, we wish to access the contents of an object. How you access the contents depends on the type of object, and there are often multiple methods for accessing contents. Square brackets are perhaps the most flexible method for accessing the contents of R objects. We can use integer values to <font color="#E0AC00"> __index__ </font> an object and return the specified element. For example, if I want to access the third element of the var1 vector, I can use the following code: 
+Quite often, we wish to access the contents of an object. How you access the contents depends on the type of object, and there are often multiple methods for accessing contents. Square brackets are perhaps the most flexible method for accessing the contents of R objects. We can use integer values to <font color="#E0AC00"> __index__ </font> an object and return the specified element. For example, if I want to access the third element of the `var1` vector, I can use the following code: 
 
 ```{r index1}
 var1[3]
 ```
 
-Similarly, if I wish to access the 3rd column of the dat data frame, I can use the following code: 
+Similarly, if I wish to access the 3rd column of the `dat` data frame, I can use the following code: 
 
 ```{r index2}
 dat[,3]
@@ -164,13 +165,13 @@ dat[,3]
 
 Indexing two-dimensional objects using square brackets requires two values, the row and column indices, separated by a comma. When one or both values are left blank (as the row value is in the preceding chunk), all values for that dimension are returned. 
 
-For objects with named elements, we can use the $ operator. For example, the columns of dat are named, so we can rewrite the last chunk as: 
+For objects with named elements, we can use the `$` operator. For example, the columns of `dat` are named, so we can rewrite the last chunk as: 
 
 ```{r index3}
 dat$var3
 ```
 
-which returns the same values. If we wanted to, we could name the values of a vector, matrix, or list and using the $ operator to retrieve species values too. 
+which returns the same values. If we wanted to, we could name the values of a vector, matrix, or list and using the `$` operator to retrieve species values too. 
 
 Indexes need not be just one integer or one element name. If we place a vector of integers or names into the square brackets following an object's name, we can return each of the indicated values from the object. Alternatively, we can place a vector of integers or names into the square brackets, immediately following a ! operator, to return all elements EXCEPT the specified elements. 
 
@@ -184,19 +185,19 @@ __Write some code to return the 2nd and 4th value of var2.__
 <br>
 
 
-Finally, we can use <font color="#E0AC00"> __boolean__ </font> (true or false) to index values. The output is the elements indicated by the position of TRUE values. We can do so explicitly, like in the following chunk of code: 
+Finally, we can use <font color="#E0AC00"> __boolean__ </font> (true or false) to index values. The output is the elements indicated by the position of `TRUE` values. We can do so explicitly, like in the following chunk of code: 
 
 ```{r index4}
 var1[c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE)]
 ```
 
-We can use boolean as indexes via <font color="#E0AC00"> __logical statements__ </font>. Logical statements are evaluated by R and return Boolean, which become the indices if used within square brackets. For example, if I wanted to return the values of var1 for which var3 is "red", I can use the following chunk of code: 
+We can use boolean as indexes via <font color="#E0AC00"> __logical statements__ </font>. Logical statements are evaluated by R and return Boolean, which become the indices if used within square brackets. For example, if I wanted to return the values of `var1` for which `var3` is "red", I can use the following chunk of code: 
 
 ```{r index5}
 var1[var3 == "red"]
 ```
 
-Note that "==" is a logic operator meaning "is equal to". It's easy to mix this up with "=", which is an assignment operator. Other logical operators are "<", ">", "<=", ">=", and "%in%", which mean "is less than", "is greater than", "is less than or equal to", "is greater than or equal to", and "is within" respectively. You can compound logical statements with "&" which means "and" or "|" which means "or".
+Note that `==` is a logic operator meaning "is equal to". It's easy to mix this up with `=`, which is an assignment operator. Other logical operators are `<`, `>`, `<=`, `>=`, and `%in%`, which mean "is less than", "is greater than", "is less than or equal to", "is greater than or equal to", and "is within" respectively. You can compound logical statements with `&` which means "and" or `|` which means "or".
 
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
@@ -214,7 +215,7 @@ __Create a new data frame which containing columns for your top 5 favorite organ
 
 As you've seen with some of the mathematical operations we'll be using, R contains many useful functions to accomplish a variety of tasks. <font color="#E0AC00"> __Functions__ </font> are objects that do stuff, and they look like a string of characters followed by a set of parentheses. Within the parentheses are arguments that modify what exactly the function does. 
 
-Functions are used to simplify tasks. For example, we could find the sum of all the data for var1 this way:
+Functions are used to simplify tasks. For example, we could find the sum of all the data for `var1` this way:
 
 ```{r functions 1}
 5 + 4 + 6 + 3 + 5 + 5
@@ -233,13 +234,13 @@ sum(dat$var1)
 ```
 
 
-Another note on troubleshooting: you can learn more about a function by Googling it, or by typing in the a "?" followed by the name of the function in the console (for example, type into the console: `?sum`). The function documentation should open in the help tab, and you can find out what the function does, what package it is contained in, and which arguments it takes. Three of Jeremy's favorite organisms are white-tailed deer, eastern hemlocks, and rhinoceros beetles. You'll receive an additional 2.5% on this lab assignment if you append these three species to your data frame in exercise 3 (along with their kingdoms and your personal ratings of their cuteness).
+Another note on troubleshooting: you can learn more about a function by searchin for it on some search engine, or by typing in the a `?` followed by the name of the function in the console (for example, type into the console: `?sum`). The function documentation should open in the help tab, and you can find out what the function does, what package it is contained in, and which arguments it takes. 
 
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <font size="5">  Exercise 5  </font>
 
-__Find the average of var1 for values where var3 is red.__
+__Find the average of `var1` for values where `var3` is red.__
 
 </div>
 <br>
@@ -248,7 +249,7 @@ __Find the average of var1 for values where var3 is red.__
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <font size="5">  Exercise 6  </font>
 
-__Besides the vector to be summed, what additional argument does the `sum()` function contain? What is the purpose of this additional argument? Remember that you can find a list of arguments that a function takes by looking at the documentation for the function. Retrieve the documentation by googling it, or by simple typing "?" followed by the name of the function in the console.__
+__Besides the vector to be summed, what additional argument does the `sum()` function contain? What is the purpose of this additional argument? Remember that you can find a list of arguments that a function takes by looking at the documentation for the function. Retrieve the documentation by searching for it on a search engine, or by simple typing `?` followed by the name of the function in the console.__
 
 </div>
 <br>
@@ -307,7 +308,7 @@ tribolium_dat <- cbind.data.frame(sp = rep(c("confusum", "castaneum"),
 tribolium_dat %>% head()
 ```
 
-This looks a little nicer. One big difference is the use of the "%>%" operator. This is a <font color="#E0AC00"> __pipe__ </font>, and when you see it, you should read it as "and then". So the code above says "make this data frame, AND THEN, make a new column of fecundity values". The pipe takes the output of the code upstream of the pipe and feeds it into the functions downstream of the pipe. 
+This looks a little nicer. One big difference is the use of the `%>%` operator. This is a <font color="#E0AC00"> __pipe__ </font>, and when you see it, you should read it as "and then". So the code above says "make this data frame, AND THEN, make a new column of fecundity values". The pipe takes the output of the code upstream of the pipe and feeds it into the functions downstream of the pipe. 
 
 For the sake of continuing to compare the dialects, lets work more with this data set. If I wanted to 1) convert the temperatures from Celsius to Kelvin and 2) get the average and standard deviation of fecundity per species per temperature treatment, I could do so in base R like this: 
 
@@ -366,6 +367,8 @@ fwrs <- c("Lupinus rivularis", "Gernaium robertianum", "Bellis perennis", "Eschs
 flower_function(fwrs, "Lupinus")
 ```
 
+Often, it is helpful to write out an example of what you would like to do before you try to write your function. Once you've coded up an example, you should 1) identify which elements of your code you'd like to be customizable in the function, 2) replace those elements with short but informative indexes (these will become the names of the arguments within your function), and 3) wrap it all in the `function()` function with the index names as your arguments.
+
 <br>
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <font size="5">  Exercise 7  </font>
@@ -389,11 +392,11 @@ dat <- read.csv(file.path("Data", "nutrient_data.csv")) # reading in the file da
 head(dat)
 ```
 
-The `file.path()` function is a nifty function that takes the components of the file path (ie the directory names and the file name) and strings them together using either a forward or backslash depending on your operating system. If you are not storing your data file in a subdirectory, you don't need that function and can instead just write read.csv("nutrient_data.csv"). We've read in our data! Now lets do things with it!
+The `file.path()` function is a nifty function that takes the components of the file path (ie the directory names and the file name) and strings them together using either a forward or backslash depending on your operating system. If you are not storing your data file in a subdirectory, you don't need that function and can instead just write `read.csv("nutrient_data.csv")`. We've read in our data! Now lets do things with it!
 
 ## Data Visualization
 
-Data visualization is an important step for performing many quantitative tasks. Often, we visualize data at various stages during data analysis or model construction. How we visualize data depends on which dialect of R we are coding in (but remember that you may wish to mix dialects). There are plotting functions in Base R, but there is a generally nicer set of plotting functions in tidyverse using the "ggplot2" package within the tidyverse package. Here, we'll show how to make a quick scatter plot using both approaches. 
+Data visualization is an important step for performing many quantitative tasks. Often, we visualize data at various stages during data analysis or model construction. How we visualize data depends on which dialect of R we are coding in (but remember that you may wish to mix dialects). There are plotting functions in Base R, but there is a generally nicer set of plotting functions in tidyverse using the `ggplot2` package within the tidyverse package. Here, we'll show how to make a quick scatter plot using both approaches, but for much of the rest of this course we will stick with visualizing data using ggplot. 
 
 ### Scatter plot in base R
 
@@ -441,7 +444,7 @@ This data frame contains fruit count for the study species, but we would like to
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <font size="5">  Exercise 10  </font>
 
-__Use these averages to create a new variable within the dataframe for the approximate seed output of each plant. Because the average seeds/fruit is dependent on the nutrient treatment, you may need to use so sort of ifelse statement or the `case_when()` function (take a moment to google these methods if you are not already familiar).__
+__Use these averages to create a new variable within the dataframe for the approximate seed output of each plant. Because the average seeds/fruit is dependent on the nutrient treatment, you may need to use some sort of `ifelse` statement or the `case_when()` function (take a moment to search these methods if you are not already familiar).__
 
 </div>
 <br>
@@ -459,7 +462,7 @@ __Calculate the average seed output for each nutrient treatment.__
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <font size="5">  Exercise 12  </font>
 
-__Make a bar plot of seed output under each nutrient treatment.__
+__Make a bar plot of average seed output under each nutrient treatment.__
 
 </div>
 <br>
@@ -477,7 +480,7 @@ __Make a scatter plot to compare seed output and stem height.__
 <div style="border: 1px solid #ccc; padding: 10px; background-color: #E5B6F6; border-radius: 5px;">
 <font size="5">  Exercise 14  </font>
 
-__Make a scatter plot to compare seed output and stem height, but include a best fit line (you may need to google how to do this) for each of the three nutrient treatments. Color the points and lines by treatment.__
+__Make a scatter plot to compare seed output and stem height, but include a best fit line (you may need to search how to do this) for each of the three nutrient treatments. Color the points and lines by treatment.__
 
 </div>
 <br>
